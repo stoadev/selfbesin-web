@@ -1,14 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
+import { supabase } from "../../lib/supabase";
 import Button from "../common/Button";
 import { User } from "lucide-react";
 import AuthModal from "../common/AuthModal";
+import ProfileModal from "../common/ProfileModal";
 
 export default function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function getProfile() {
+      if (!user) {
+        setAvatarUrl(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(`avatar_url`)
+          .eq("id", user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data?.avatar_url) {
+          if (data.avatar_url.startsWith("http")) {
+            setAvatarUrl(data.avatar_url);
+          } else {
+            const { data: downloadData, error: downloadError } =
+              await supabase.storage.from("avatars").download(data.avatar_url);
+            if (downloadError) throw downloadError;
+            setAvatarUrl(URL.createObjectURL(downloadData));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading navbar avatar:", error);
+      }
+    }
+
+    getProfile();
+  }, [user]);
 
   return (
     <>
@@ -32,18 +70,19 @@ export default function Navbar() {
               <ThemeToggle />
 
               {user ? (
-                <div className="flex items-center gap-4">
-                  <div className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {user.email}
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={signOut}>
-                    Çıkış Yap
-                  </Button>
-                  <Link to="/profile">
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center cursor-pointer hover:ring-2 ring-emerald-500 transition-all">
-                      <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                  </Link>
+                <div
+                  onClick={() => setIsProfileModalOpen(true)}
+                  className="w-10 h-10 rounded-full border-2 border-transparent hover:border-emerald-500 overflow-hidden cursor-pointer transition-all shadow-sm flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30"
+                >
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  )}
                 </div>
               ) : (
                 <Button
@@ -62,6 +101,11 @@ export default function Navbar() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
       />
     </>
   );
