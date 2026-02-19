@@ -29,7 +29,7 @@ export default function ConfirmModal({
     danger: {
       iconBg: "bg-red-50 dark:bg-red-900/20",
       iconColor: "text-red-600 dark:text-red-400",
-      buttonVariant: "secondaryRed" as const,
+      buttonVariant: "redSecondary" as const,
     },
     warning: {
       iconBg: "bg-amber-50 dark:bg-amber-900/20",
