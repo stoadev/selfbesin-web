@@ -47,18 +47,19 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
             id: user.id,
             ...profileData,
           } as Profile);
+        }
 
-          if (profileData.avatar_url) {
-            if (profileData.avatar_url.startsWith("http")) {
-              setAvatarUrl(profileData.avatar_url);
-            } else {
-              downloadImage(profileData.avatar_url);
-            }
-          } else if (user.user_metadata?.avatar_url) {
-            setAvatarUrl(user.user_metadata.avatar_url);
-          } else if (user.user_metadata?.picture) {
-            setAvatarUrl(user.user_metadata.picture);
+        // Avatar handling with metadata fallback
+        if (profileData?.avatar_url) {
+          if (profileData.avatar_url.startsWith("http")) {
+            setAvatarUrl(profileData.avatar_url);
+          } else {
+            downloadImage(profileData.avatar_url);
           }
+        } else if (user.user_metadata?.avatar_url) {
+          setAvatarUrl(user.user_metadata.avatar_url);
+        } else if (user.user_metadata?.picture) {
+          setAvatarUrl(user.user_metadata.picture);
         }
       } catch (error) {
         console.error("Error loading user data!", error);
