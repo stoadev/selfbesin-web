@@ -34,23 +34,25 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
           .from("profiles")
           .select(`username, avatar_url, full_name, updated_at`)
           .eq("id", user.id)
-          .maybeSingle();
+          .limit(1);
 
         if (error) {
           throw error;
         }
 
-        if (data) {
+        const profileData = data?.[0];
+
+        if (profileData) {
           setProfile({
             id: user.id,
-            ...data,
+            ...profileData,
           } as Profile);
 
-          if (data.avatar_url) {
-            if (data.avatar_url.startsWith("http")) {
-              setAvatarUrl(data.avatar_url);
+          if (profileData.avatar_url) {
+            if (profileData.avatar_url.startsWith("http")) {
+              setAvatarUrl(profileData.avatar_url);
             } else {
-              downloadImage(data.avatar_url);
+              downloadImage(profileData.avatar_url);
             }
           } else if (user.user_metadata?.avatar_url) {
             setAvatarUrl(user.user_metadata.avatar_url);

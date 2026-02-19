@@ -26,16 +26,20 @@ export default function Navbar() {
           .from("profiles")
           .select(`avatar_url`)
           .eq("id", user.id)
-          .maybeSingle();
+          .limit(1);
 
         if (error) throw error;
 
-        if (data?.avatar_url) {
-          if (data.avatar_url.startsWith("http")) {
-            setAvatarUrl(data.avatar_url);
+        const profile = data?.[0];
+
+        if (profile?.avatar_url) {
+          if (profile.avatar_url.startsWith("http")) {
+            setAvatarUrl(profile.avatar_url);
           } else {
             const { data: downloadData, error: downloadError } =
-              await supabase.storage.from("avatars").download(data.avatar_url);
+              await supabase.storage
+                .from("avatars")
+                .download(profile.avatar_url);
             if (downloadError) throw downloadError;
             setAvatarUrl(URL.createObjectURL(downloadData));
           }
