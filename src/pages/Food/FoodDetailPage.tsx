@@ -23,7 +23,7 @@ export default function FoodDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
@@ -31,9 +31,14 @@ export default function FoodDetailPage() {
 
   if (!food) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-6">
-        <p className="text-lg font-semibold">Besin bulunamadı.</p>
-        <Link to="/" className="text-emerald-600 hover:underline text-sm">
+      <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center">
+        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+          Besin bulunamadı.
+        </p>
+        <Link
+          to="/"
+          className="text-emerald-600 hover:underline text-sm font-medium"
+        >
           Ana sayfaya dön
         </Link>
       </div>
@@ -45,9 +50,9 @@ export default function FoodDetailPage() {
   const calc = (val: number) => (val * ratio).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+    <>
       {/* Üst bar */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-800">
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-30">
         <Link
           to="/"
           className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -59,7 +64,7 @@ export default function FoodDetailPage() {
         </h1>
       </div>
 
-      <div className="max-w-lg mx-auto px-5 py-8 flex flex-col gap-8">
+      <div className="w-full max-w-lg mx-auto px-5 py-8 flex flex-col gap-8">
         {/* Porsiyon seçici */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -116,17 +121,17 @@ export default function FoodDetailPage() {
         {/* Giriş yap CTA */}
         <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-5 text-center flex flex-col gap-3">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Bu besini günlük diyerine eklemek için giriş yap.
+            Bu besini günlük diyetine eklemek için giriş yap.
           </p>
           <Link
-            to="/login"
+            to="/"
             className="bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-emerald-700 transition-colors inline-block"
           >
-            Giriş Yap
+            Aramaya Dön
           </Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

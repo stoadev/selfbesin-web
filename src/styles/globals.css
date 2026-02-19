@@ -16,6 +16,8 @@
 
   --z-index-modal: 100;
   --z-index-max: 999;
+
+  --spacing-nav: 64px;
 }
 * {
   user-select: none;

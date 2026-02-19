@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
-import { X, User, Mail, Calendar, LogOut, Edit2 } from "lucide-react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
+import { User, Mail, Calendar, LogOut, Edit2 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import Button from "./Button";
+import Modal from "./Modal";
 
 type ProfileModalProps = {
   isOpen: boolean;
@@ -192,57 +192,14 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
 }
 
 export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-max flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-      <div
-        ref={modalRef}
-        className="w-full max-w-[440px] max-h-[90vh] overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-2xl flex flex-col relative animate-in fade-in zoom-in duration-200"
-        role="dialog"
-      >
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 p-2 rounded-lg text-white/80 hover:bg-white/10 transition-colors z-10"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <ProfileModalContent onClose={onClose} />
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-[440px]"
+      closeButtonClassName="top-4 right-4 text-white/80 hover:bg-white/10"
+    >
+      <ProfileModalContent onClose={onClose} />
+    </Modal>
   );
 }

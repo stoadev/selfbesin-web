@@ -4,7 +4,7 @@ import { ThemeToggle } from "../common/ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import Button from "../common/Button";
-import { User } from "lucide-react";
+import { User, Utensils } from "lucide-react";
 import AuthModal from "../common/AuthModal";
 import ProfileModal from "../common/ProfileModal";
 
@@ -73,9 +73,24 @@ export default function Navbar() {
               </span>
             </Link>
 
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-1">
+              {/* Optional: Add other links here if needed */}
+            </div>
+
             {/* Right Side Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <ThemeToggle />
+
+              {user && (
+                <Link
+                  to="/meals"
+                  title="Öğünlerim"
+                  className="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
+                >
+                  <Utensils className="w-5 h-5" />
+                </Link>
+              )}
 
               {user ? (
                 <div

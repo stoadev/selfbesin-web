@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
-import { X, Mail, Lock, ArrowRight, Github } from "lucide-react";
+import { useState } from "react";
+import { Mail, Lock, ArrowRight, Github } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createPortal } from "react-dom";
+import Modal from "./Modal";
 import { supabase } from "../../lib/supabase";
 import { loginSchema, type LoginSchema } from "../../utils/validation";
 
@@ -227,60 +227,14 @@ function AuthModalContent({ onClose }: { onClose: () => void }) {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Body overflow toggle
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
-  // Handle click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-max flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-      <div
-        ref={modalRef}
-        className="w-full max-w-[530px] max-h-[85vh] overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-2xl flex flex-col relative"
-        role="dialog"
-      >
-        {/* Header/Close */}
-        <button
-          onClick={onClose}
-          aria-label="Close"
-          className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <AuthModalContent onClose={onClose} />
-      </div>
-    </div>,
-    document.body,
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-[530px]"
+      maxHeight="max-h-[85vh]"
+    >
+      <AuthModalContent onClose={onClose} />
+    </Modal>
   );
 }
