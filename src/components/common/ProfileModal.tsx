@@ -171,7 +171,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
         {/* Actions */}
         <div className="w-full flex gap-3">
           <Button
-            variant="red"
+            variant="redSecondary"
             className="flex-1 h-12 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-500 border border-red-500 whitespace-nowrap"
             onClick={handleSignOut}
           >

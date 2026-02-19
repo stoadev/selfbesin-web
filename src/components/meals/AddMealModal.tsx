@@ -391,7 +391,7 @@ function AddMealModalContent({
         <div className="flex gap-3">
           {mealToEdit ? (
             <Button
-              variant="secondaryRed"
+              variant="redSecondary"
               className="flex-1 text-red-500 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isSubmitting}

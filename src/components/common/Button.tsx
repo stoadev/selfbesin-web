@@ -7,7 +7,7 @@ type ButtonProps = Omit<Partial<LinkProps>, "as" | "to"> & {
     | "secondary"
     | "third"
     | "ghost"
-    | "secondaryRed"
+    | "redSecondary"
     | "bluePrimary"
     | "blueSecondary"
     | "cta"
@@ -35,7 +35,7 @@ const variantClasses = {
     "flex items-center gap-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-100 dark:text-gray-400 dark:hover:text-emerald-400 dark:hover:bg-emerald-900 rounded-full transition-colors text-xs sm:text-sm whitespace-nowrap",
   ghost:
     "bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
-  secondaryRed:
+  redSecondary:
     "bg-white text-red-600 border border-red-600 hover:bg-red-100 dark:bg-gray-900 dark:text-red-600 dark:border-red-600 dark:hover:bg-red-900",
   bluePrimary:
     "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700",
