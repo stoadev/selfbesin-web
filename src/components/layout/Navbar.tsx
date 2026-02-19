@@ -39,6 +39,10 @@ export default function Navbar() {
             if (downloadError) throw downloadError;
             setAvatarUrl(URL.createObjectURL(downloadData));
           }
+        } else if (user.user_metadata?.avatar_url) {
+          setAvatarUrl(user.user_metadata.avatar_url);
+        } else if (user.user_metadata?.picture) {
+          setAvatarUrl(user.user_metadata.picture);
         }
       } catch (error) {
         console.error("Error loading navbar avatar:", error);

@@ -52,6 +52,10 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
             } else {
               downloadImage(data.avatar_url);
             }
+          } else if (user.user_metadata?.avatar_url) {
+            setAvatarUrl(user.user_metadata.avatar_url);
+          } else if (user.user_metadata?.picture) {
+            setAvatarUrl(user.user_metadata.picture);
           }
         }
       } catch (error) {
