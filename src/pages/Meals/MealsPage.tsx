@@ -153,7 +153,7 @@ export default function MealsPage() {
                     <div className="w-px h-6 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
                     <div className="flex-1 flex flex-col items-center justify-center py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
                       <span className="text-[10px] font-bold text-gray-400 tracking-tight group-hover:text-yellow-500 transition-colors">
-                        Karbonhidrat
+                        Karb.
                       </span>
                       <span className="text-sm font-bold text-yellow-500">
                         {Math.round(
