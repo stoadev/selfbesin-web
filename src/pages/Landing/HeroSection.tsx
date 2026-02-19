@@ -129,8 +129,8 @@ export default function HeroSection() {
         onClearHistory={clearHistory}
         onRemoveRecent={removeSearch}
       />
-      <section className="flex-1 flex items-center justify-center px-4 sm:px-6 -mt-nav">
-        <div className="w-full max-w-3xl mx-auto py-10 sm:py-20 flex flex-col items-center text-center gap-8 sm:gap-10">
+      <section className="flex-1 flex items-center justify-center px-4 sm:px-6">
+        <div className="w-full max-w-3xl mx-auto py-10 sm:py-20 flex flex-col items-center text-center gap-6 sm:gap-10 -mt-32 sm:-mt-20">
           {/* Başlık */}
           <div className="flex flex-col gap-4">
             <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">

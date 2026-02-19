@@ -1,19 +1,40 @@
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Utensils, Calendar, Info, Apple } from "lucide-react";
+import {
+  Plus,
+  Utensils,
+  Calendar,
+  Flame,
+  Beef,
+  Wheat,
+  Droplets,
+  Edit2,
+  Copy,
+  Trash,
+} from "lucide-react";
+import SwipeableItem from "../../components/common/SwipeableItem";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import Button from "../../components/common/Button";
 import AddMealModal from "../../components/meals/AddMealModal";
-import type { MealWithFoods } from "../../types";
+import MealViewModal from "../../components/meals/MealViewModal";
+import FoodAmountSelectionModal from "../../components/meals/FoodAmountSelectionModal";
+import type { MealWithFoods, Food, MealFood } from "../../types";
 
 export default function MealsPage() {
   const { user } = useAuth();
   const [meals, setMeals] = useState<MealWithFoods[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<MealWithFoods | null>(null);
+  const [mealToEdit, setMealToEdit] = useState<MealWithFoods | null>(null);
+  const [foodToEditAmount, setFoodToEditAmount] = useState<Food | null>(null);
+  const [editingMealFoodId, setEditingMealFoodId] = useState<string | null>(
+    null,
+  );
 
   const fetchMeals = useCallback(async () => {
-    if (!user) return;
+    if (!user) return [];
     setLoading(true);
 
     try {
@@ -29,20 +50,137 @@ export default function MealsPage() {
         `,
         )
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
-      setMeals(data || []);
+      const fetchedMeals = data || [];
+      setMeals(fetchedMeals);
+      return fetchedMeals;
     } catch (error) {
       console.error("Error fetching meals:", error);
+      return [];
     } finally {
       setLoading(false);
     }
   }, [user]);
 
+  const dailyTotals = meals.reduce(
+    (acc, meal) => {
+      const mealTotals = meal.meal_foods.reduce(
+        (mAcc, mf) => ({
+          calories: mAcc.calories + mf.calories,
+          protein: mAcc.protein + mf.protein,
+          carbs: mAcc.carbs + (mf.carbs || 0),
+          fat: mAcc.fat + mf.fat,
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 },
+      );
+      return {
+        calories: acc.calories + mealTotals.calories,
+        protein: acc.protein + mealTotals.protein,
+        carbs: acc.carbs + mealTotals.carbs,
+        fat: acc.fat + mealTotals.fat,
+      };
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+  );
+
   useEffect(() => {
     fetchMeals();
   }, [fetchMeals]);
+
+  const handleMealClick = (meal: MealWithFoods) => {
+    setSelectedMeal(meal);
+    setIsViewModalOpen(true);
+  };
+
+  const handleFoodClickFromView = (mf: MealFood) => {
+    if (!mf.food) return;
+    setEditingMealFoodId(mf.id);
+    setFoodToEditAmount(mf.food);
+  };
+
+  const handleUpdateMealFoodGrams = async (grams: number) => {
+    if (!editingMealFoodId || !foodToEditAmount) return;
+
+    try {
+      const factor = grams / 100;
+      const { error } = await supabase
+        .from("meal_foods")
+        .update({
+          grams,
+          calories: foodToEditAmount.calories_per_100g * factor,
+          protein: foodToEditAmount.protein_g_per_100g * factor,
+          carbs: foodToEditAmount.carbs_g_per_100g * factor,
+          fat: foodToEditAmount.fat_g_per_100g * factor,
+        })
+        .eq("id", editingMealFoodId);
+
+      if (error) throw error;
+
+      const updatedMeals = await fetchMeals();
+
+      if (selectedMeal) {
+        const found = updatedMeals.find((m) => m.id === selectedMeal.id);
+        if (found) setSelectedMeal(found);
+      }
+    } catch (error) {
+      console.error("Error updating food grams:", error);
+      alert("Miktar güncellenirken bir hata oluştu.");
+    } finally {
+      setEditingMealFoodId(null);
+      setFoodToEditAmount(null);
+    }
+  };
+
+  const handleDeleteMeal = async (mealId: string) => {
+    if (!user) return;
+    try {
+      const { error } = await supabase.from("meals").delete().eq("id", mealId);
+
+      if (error) throw error;
+      await fetchMeals();
+    } catch (error) {
+      console.error("Error deleting meal:", error);
+      alert("Öğün silinirken bir hata oluştu.");
+    }
+  };
+
+  const handleDuplicateMeal = async (meal: MealWithFoods) => {
+    if (!user) return;
+    try {
+      const { data: newMeal, error: mealError } = await supabase
+        .from("meals")
+        .insert([{ user_id: user.id, name: `${meal.name} (Kopya)` }])
+        .select()
+        .single();
+
+      if (mealError) throw mealError;
+
+      if (meal.meal_foods.length > 0) {
+        const mealFoodsToInsert = meal.meal_foods.map((mf) => ({
+          meal_id: newMeal.id,
+          food_id: mf.food_id,
+          grams: mf.grams,
+          calories: mf.calories,
+          protein: mf.protein,
+          carbs: mf.carbs,
+          fat: mf.fat,
+        }));
+
+        const { error: foodsError } = await supabase
+          .from("meal_foods")
+          .insert(mealFoodsToInsert);
+
+        if (foodsError) throw foodsError;
+      }
+
+      await fetchMeals();
+    } catch (error) {
+      console.error("Error duplicating meal:", error);
+      alert("Öğün çoğaltılırken bir hata oluştu.");
+    }
+  };
 
   if (loading) {
     return (
@@ -54,203 +192,273 @@ export default function MealsPage() {
 
   return (
     <>
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 pt-4 sm:pt-8">
-        <header className="mb-6 sm:mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Öğünlerim
-              </h1>
-            </div>
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-1 pt-2 sm:pt-4 h-full flex flex-col overflow-hidden">
+        <header className="mb-2 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+              Öğün Seç
+            </h1>
             <Button
-              variant="primary"
-              className="h-10 sm:h-12 px-4 sm:px-6 shadow-lg shadow-emerald-500/20 flex items-center justify-center whitespace-nowrap"
+              variant="cta"
+              className="h-9 px-3 flex items-center justify-center whitespace-nowrap"
               onClick={() => setIsModalOpen(true)}
             >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2 shrink-0" />
-              <span className="text-sm sm:text-base">Öğün Ekle</span>
+              <Plus className="w-4 h-4 mr-1" />
+              <span className="text-xs font-bold">Öğün Ekle</span>
             </Button>
           </div>
-          <div className="sm:pl-1">
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              Günlük beslenme takibini buradan yönetebilirsin.
-            </p>
-          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-[10px] sm:text-xs">
+            Günlük beslenme takibini buradan yönetebilirsin.
+          </p>
         </header>
 
-        {meals.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-12 text-center border border-gray-100 dark:border-gray-800 shadow-sm">
-            <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-600 dark:text-emerald-400">
-              <Utensils className="w-8 h-8" />
+        {/* Günlük Toplam Özet (Daha Kompakt) */}
+        {meals.length > 0 && (
+          <div className="mb-4 grid grid-cols-4 gap-2 sm:gap-3 bg-white dark:bg-gray-900 p-2 sm:p-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
+            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100/30 dark:border-red-900/10">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Flame className="w-2.5 h-2.5 text-red-500" />
+                <span className="text-[7px] font-black uppercase tracking-tight text-red-400">
+                  Kcal
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-xs font-black text-red-600 dark:text-red-400">
+                {Math.round(dailyTotals.calories)}
+              </span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+
+            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100/30 dark:border-blue-900/10">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Beef className="w-2.5 h-2.5 text-blue-500" />
+                <span className="text-[7px] font-black uppercase tracking-tight text-blue-400">
+                  Protein
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-xs font-black text-blue-600 dark:text-blue-400">
+                {Math.round(dailyTotals.protein)}g
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-100/30 dark:border-yellow-900/10">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Wheat className="w-2.5 h-2.5 text-yellow-500" />
+                <span className="text-[7px] font-black uppercase tracking-tight text-yellow-400">
+                  Karb
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-xs font-black text-yellow-600 dark:text-yellow-400">
+                {Math.round(dailyTotals.carbs)}g
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100/30 dark:border-orange-900/10">
+              <div className="flex items-center gap-1 mb-0.5">
+                <Droplets className="w-2.5 h-2.5 text-orange-500" />
+                <span className="text-[7px] font-black uppercase tracking-tight text-orange-400">
+                  Yağ
+                </span>
+              </div>
+              <span className="text-[10px] sm:text-xs font-black text-orange-600 dark:text-orange-400">
+                {Math.round(dailyTotals.fat)}g
+              </span>
+            </div>
+          </div>
+        )}
+
+        {meals.length === 0 ? (
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-800 shadow-sm flex-1 flex flex-col items-center justify-center">
+            <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center mb-3 text-emerald-600 dark:text-emerald-400">
+              <Utensils className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
               Henüz öğün eklememişsin
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Besinleri arayarak ilk öğününü oluşturmaya başlayabilirsin.
+            <p className="text-gray-500 dark:text-gray-400 text-xs mb-4">
+              Besinleri arayarak ilk öğününü oluşturabilirsin.
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            {meals.map((meal) => (
-              <div
-                key={meal.id}
-                className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              >
-                {/* Meal Header */}
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gray-50/50 dark:bg-gray-800/30">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
-                      <Utensils className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
-                        {meal.name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(meal.created_at).toLocaleDateString("tr-TR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          weekday: "long",
-                          day: "numeric",
-                          month: "long",
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Total Macros for Meal */}
-                  <div className="flex items-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 min-w-[260px] sm:min-w-[400px]">
-                    <div className="flex-1 flex flex-col items-center justify-center py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
-                      <span className="text-[10px] font-bold text-gray-400 tracking-tight group-hover:text-emerald-500 transition-colors">
-                        Kalori
-                      </span>
-                      <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                        {Math.round(
-                          meal.meal_foods.reduce(
-                            (acc, mf) => acc + mf.calories,
-                            0,
-                          ),
-                        )}
-                      </span>
-                    </div>
-                    <div className="w-px h-6 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
-                    <div className="flex-1 flex flex-col items-center justify-center py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
-                      <span className="text-[10px] font-bold text-gray-400 tracking-tight group-hover:text-blue-500 transition-colors">
-                        Protein
-                      </span>
-                      <span className="text-sm font-bold text-blue-500">
-                        {Math.round(
-                          meal.meal_foods.reduce(
-                            (acc, mf) => acc + mf.protein,
-                            0,
-                          ),
-                        )}
-                        g
-                      </span>
-                    </div>
-                    <div className="w-px h-6 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
-                    <div className="flex-1 flex flex-col items-center justify-center py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
-                      <span className="text-[10px] font-bold text-gray-400 tracking-tight group-hover:text-yellow-500 transition-colors">
-                        Karb.
-                      </span>
-                      <span className="text-sm font-bold text-yellow-500">
-                        {Math.round(
-                          meal.meal_foods.reduce(
-                            (acc, mf) => acc + (mf.carbs || 0),
-                            0,
-                          ),
-                        )}
-                        g
-                      </span>
-                    </div>
-                    <div className="w-px h-6 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
-                    <div className="flex-1 flex flex-col items-center justify-center py-2 hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
-                      <span className="text-[10px] font-bold text-gray-400 tracking-tight group-hover:text-orange-500 transition-colors">
-                        Yağ
-                      </span>
-                      <span className="text-sm font-bold text-orange-500">
-                        {Math.round(
-                          meal.meal_foods.reduce((acc, mf) => acc + mf.fat, 0),
-                        )}
-                        g
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Meal Foods List */}
-                <div className="p-0">
-                  {meal.meal_foods.map((mf) => (
-                    <div
-                      key={mf.id}
-                      className="flex items-center justify-between p-4 sm:p-6 hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800"
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
-                          <Apple className="w-5 h-5 text-emerald-500" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                            {mf.food?.name || "Bilinmeyen Besin"}
-                          </h4>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {mf.grams}g • {Math.round(mf.calories)} kcal
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-6 text-right">
-                        <div className="hidden sm:flex items-center gap-4">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                              {" "}
-                              P{" "}
-                            </span>
-                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                              {Math.round(mf.protein)}g
-                            </span>
+          <div className="flex-1 min-h-0 relative mb-12 sm:mb-16">
+            <div className="absolute inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-2 sm:p-4 bg-gray-50/30 dark:bg-gray-900/10 shadow-inner">
+              <div className="space-y-4">
+                {meals.map((meal) => (
+                  <SwipeableItem
+                    key={meal.id}
+                    actions={[
+                      {
+                        label: "Çoğalt",
+                        icon: <Copy className="w-4 h-4" />,
+                        onClick: () => handleDuplicateMeal(meal),
+                        color: "bg-blue-500",
+                      },
+                      {
+                        label: "Düzenle",
+                        icon: <Edit2 className="w-4 h-4" />,
+                        onClick: () => {
+                          setMealToEdit(meal);
+                          setIsModalOpen(true);
+                        },
+                        color: "bg-emerald-500",
+                      },
+                      {
+                        label: "Sil",
+                        icon: <Trash className="w-4 h-4" />,
+                        onClick: () => {
+                          if (
+                            window.confirm(
+                              "Bu öğünü silmek istediğine emin misin?",
+                            )
+                          ) {
+                            handleDeleteMeal(meal.id);
+                          }
+                        },
+                        color: "bg-red-500",
+                      },
+                    ]}
+                  >
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+                      <div
+                        className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/30"
+                        onClick={() => handleMealClick(meal)}
+                      >
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+                            <Utensils className="w-5 h-5" />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                              {" "}
-                              K{" "}
-                            </span>
-                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                              {Math.round(mf.carbs)}g
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
-                              {" "}
-                              Y{" "}
-                            </span>
-                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                              {Math.round(mf.fat)}g
-                            </span>
+                          <div className="min-w-0">
+                            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight truncate">
+                              {meal.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(meal.created_at).toLocaleDateString(
+                                "tr-TR",
+                                { hour: "2-digit", minute: "2-digit" },
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          className="p-2 h-auto text-gray-400 hover:text-red-500"
-                        >
-                          <Info className="w-4 h-4" />
-                        </Button>
+
+                        <div className="shrink-0">
+                          <div className="flex items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-1 sm:py-1.5 gap-2 sm:gap-3">
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                                Kcal
+                              </span>
+                              <span className="text-[10px] sm:text-xs font-bold text-red-500">
+                                {Math.round(
+                                  meal.meal_foods.reduce(
+                                    (acc, mf) => acc + mf.calories,
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                                P
+                              </span>
+                              <span className="text-[10px] sm:text-xs font-bold text-blue-500">
+                                {Math.round(
+                                  meal.meal_foods.reduce(
+                                    (acc, mf) => acc + mf.protein,
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                                K
+                              </span>
+                              <span className="text-[10px] sm:text-xs font-bold text-yellow-500">
+                                {Math.round(
+                                  meal.meal_foods.reduce(
+                                    (acc, mf) => acc + (mf.carbs || 0),
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
+                            <div className="flex flex-col items-center">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
+                                Y
+                              </span>
+                              <span className="text-[10px] sm:text-xs font-bold text-orange-500">
+                                {Math.round(
+                                  meal.meal_foods.reduce(
+                                    (acc, mf) => acc + mf.fat,
+                                    0,
+                                  ),
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </SwipeableItem>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         )}
       </div>
 
       <AddMealModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchMeals}
+        onClose={() => {
+          setIsModalOpen(false);
+          setMealToEdit(null);
+        }}
+        onSuccess={async () => {
+          const updatedMeals = await fetchMeals();
+          if (mealToEdit) {
+            const updatedMeal = updatedMeals.find(
+              (m) => m.id === mealToEdit.id,
+            );
+            if (updatedMeal) {
+              setSelectedMeal(updatedMeal);
+              setIsViewModalOpen(true);
+            }
+          }
+        }}
+        mealToEdit={mealToEdit}
+      />
+
+      <MealViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedMeal(null);
+        }}
+        meal={selectedMeal}
+        onEdit={() => {
+          if (selectedMeal) {
+            setIsViewModalOpen(false);
+            setMealToEdit(selectedMeal);
+            setIsModalOpen(true);
+          }
+        }}
+        onFoodClick={handleFoodClickFromView}
+      />
+
+      <FoodAmountSelectionModal
+        key={editingMealFoodId}
+        isOpen={!!foodToEditAmount}
+        onClose={() => {
+          setFoodToEditAmount(null);
+          setEditingMealFoodId(null);
+        }}
+        food={foodToEditAmount}
+        onConfirm={handleUpdateMealFoodGrams}
+        initialGrams={
+          selectedMeal?.meal_foods.find((mf) => mf.id === editingMealFoodId)
+            ?.grams
+        }
       />
     </>
   );

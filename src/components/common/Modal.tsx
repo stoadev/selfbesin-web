@@ -62,6 +62,7 @@ export default function Modal({
     <div className="fixed inset-0 z-max flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
       <div
         ref={modalRef}
+        onMouseDown={(e: React.MouseEvent) => e.stopPropagation()}
         className={`w-full ${maxWidth} ${maxHeight} overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-2xl flex flex-col relative animate-in fade-in zoom-in duration-200 ${className}`}
         role="dialog"
       >

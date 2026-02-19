@@ -6,6 +6,8 @@ export interface Food {
   protein_g_per_100g: number;
   carbs_g_per_100g: number;
   fat_g_per_100g: number;
+  serving_unit_name?: string;
+  serving_unit_grams?: number;
   created_at?: string;
 }
 

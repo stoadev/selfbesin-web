@@ -3,12 +3,20 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Flame, Beef, Wheat, Droplets } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
+import Button from "../../components/common/Button";
+import AuthModal from "../../components/common/AuthModal";
+import AddToMealModal from "../../components/meals/AddToMealModal";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function FoodDetailPage() {
+  const { user } = useAuth();
   const { slug } = useParams<{ slug: string }>();
   const [food, setFood] = useState<Food | null>(null);
   const [loading, setLoading] = useState(true);
   const [serving, setServing] = useState(100);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAdded, setIsAdded] = useState(false);
 
   useEffect(() => {
     async function fetchFood() {
@@ -49,6 +57,11 @@ export default function FoodDetailPage() {
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
+  const isUnitSelected = (unitCount: number) => {
+    if (!food.serving_unit_grams) return false;
+    return Math.abs(serving - food.serving_unit_grams * unitCount) < 1;
+  };
+
   return (
     <>
       {/* Üst bar */}
@@ -64,43 +77,93 @@ export default function FoodDetailPage() {
         </h1>
       </div>
 
-      <div className="w-full max-w-lg mx-auto px-5 py-8 flex flex-col gap-8">
+      <div className="w-full max-lg mx-auto px-5 py-8 flex flex-col gap-8 pb-32">
         {/* Porsiyon seçici */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-            Porsiyon (gram)
-          </label>
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {food.serving_unit_name
+                ? `${food.serving_unit_name.charAt(0).toUpperCase() + food.serving_unit_name.slice(1)} / Gram`
+                : "Porsiyon (gram)"}
+            </label>
+            <div className="flex items-baseline gap-1">
+              <span className="text-sm font-bold text-emerald-600">
+                {serving}g
+              </span>
+              {food.serving_unit_name && food.serving_unit_grams && (
+                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
+                  (
+                  {(serving / food.serving_unit_grams)
+                    .toFixed(1)
+                    .replace(".0", "")}{" "}
+                  {food.serving_unit_name})
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col gap-4">
             <input
               type="range"
               min={10}
               max={500}
               step={5}
               value={serving}
-              onChange={(e) => setServing(Number(e.target.value))}
-              className="flex-1 accent-emerald-600"
+              onChange={(e) => {
+                setServing(Number(e.target.value));
+                setIsAdded(false);
+              }}
+              className="flex-1 accent-emerald-600 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, #10b981 0%, #10b981 ${
+                  ((serving - 10) / (500 - 10)) * 100
+                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} ${
+                  ((serving - 10) / (500 - 10)) * 100
+                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} 100%)`,
+              }}
             />
-            <span className="text-sm font-bold text-emerald-600 w-14 text-right">
-              {serving}g
-            </span>
+
+            {/* Hızlı Birim Seçimi */}
+            {food.serving_unit_name && food.serving_unit_grams && (
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((unitCount) => (
+                  <button
+                    key={unitCount}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setServing(food.serving_unit_grams! * unitCount);
+                      setIsAdded(false);
+                    }}
+                    className={`flex-1 py-3 px-1 rounded-xl border text-[10px] font-bold transition-all duration-200 ${
+                      isUnitSelected(unitCount)
+                        ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                        : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
+                    }`}
+                  >
+                    {unitCount} {food.serving_unit_name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         {/* Makro kartları */}
         <div className="grid grid-cols-2 gap-3">
           <MacroCard
-            icon={<Flame className="w-5 h-5 text-orange-500" />}
+            icon={<Flame className="w-5 h-5 text-red-500" />}
             label="Kalori"
             value={calc(food.calories_per_100g)}
             unit="kcal"
-            bg="bg-orange-50 dark:bg-orange-950/30"
+            bg="bg-red-50 dark:bg-red-950/30"
           />
           <MacroCard
-            icon={<Beef className="w-5 h-5 text-red-500" />}
+            icon={<Beef className="w-5 h-5 text-blue-500" />}
             label="Protein"
             value={calc(food.protein_g_per_100g)}
             unit="g"
-            bg="bg-red-50 dark:bg-red-950/30"
+            bg="bg-blue-50 dark:bg-blue-950/30"
           />
           <MacroCard
             icon={<Wheat className="w-5 h-5 text-yellow-500" />}
@@ -110,27 +173,57 @@ export default function FoodDetailPage() {
             bg="bg-yellow-50 dark:bg-yellow-950/30"
           />
           <MacroCard
-            icon={<Droplets className="w-5 h-5 text-blue-500" />}
+            icon={<Droplets className="w-5 h-5 text-orange-500" />}
             label="Yağ"
             value={calc(food.fat_g_per_100g)}
             unit="g"
-            bg="bg-blue-50 dark:bg-blue-950/30"
+            bg="bg-orange-50 dark:bg-orange-950/30"
           />
         </div>
+      </div>
 
-        {/* Giriş yap CTA */}
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-5 text-center flex flex-col gap-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Bu besini günlük diyetine eklemek için giriş yap.
-          </p>
-          <Link
-            to="/"
-            className="bg-emerald-600 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-emerald-700 transition-colors inline-block"
-          >
-            Aramaya Dön
-          </Link>
+      {/* Sabit Alt Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-lg mx-auto px-5 py-4">
+          {user ? (
+            <div className="flex gap-3">
+              <Button
+                variant={isAdded ? "blueSecondary" : "blueCta"}
+                className="flex-1 h-12"
+                onClick={() => setIsAddModalOpen(true)}
+              >
+                {isAdded ? "Besin öğüne eklendi" : "Öğününe Ekle"}
+              </Button>
+              <Button variant="cta" className="flex-1 h-12" to="/meals">
+                Öğünlerime Dön
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              className="w-full h-12"
+              onClick={() => setIsAuthModalOpen(true)}
+            >
+              Giriş Yap
+            </Button>
+          )}
         </div>
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      {food && (
+        <AddToMealModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSuccess={() => setIsAdded(true)}
+          food={food}
+          grams={serving}
+        />
+      )}
     </>
   );
 }

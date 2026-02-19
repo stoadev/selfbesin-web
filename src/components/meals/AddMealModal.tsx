@@ -4,8 +4,10 @@ import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import { foodService } from "../../services/food.service";
-import type { Food } from "../../types";
+import type { Food, MealWithFoods } from "../../types";
 import Button from "../common/Button";
+import ConfirmModal from "../common/ConfirmModal";
+import FoodAmountSelectionModal from "./FoodAmountSelectionModal";
 
 type SelectedFood = {
   food: Food;
@@ -16,22 +18,36 @@ type AddMealModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  mealToEdit?: MealWithFoods | null;
 };
 
 function AddMealModalContent({
   onClose,
   onSuccess,
+  mealToEdit,
 }: {
   onClose: () => void;
   onSuccess: () => void;
+  mealToEdit?: MealWithFoods | null;
 }) {
   const { user } = useAuth();
-  const [mealName, setMealName] = useState("");
+  const [mealName, setMealName] = useState(mealToEdit?.name || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Food[]>([]);
-  const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>([]);
+  const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>(
+    mealToEdit?.meal_foods
+      ?.filter((mf) => mf.food)
+      .map((mf) => ({
+        food: mf.food!,
+        grams: mf.grams,
+      })) || [],
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [foodToSelectAmount, setFoodToSelectAmount] = useState<Food | null>(
+    null,
+  );
 
   // Search foods as user types
   useEffect(() => {
@@ -50,28 +66,35 @@ function AddMealModalContent({
   }, [searchQuery]);
 
   const handleAddFood = (food: Food) => {
-    if (!selectedFoods.find((sf) => sf.food.id === food.id)) {
-      setSelectedFoods([...selectedFoods, { food, grams: 100 }]);
-    }
+    setFoodToSelectAmount(food);
+  };
+
+  const onConfirmAmount = (grams: number) => {
+    if (!foodToSelectAmount) return;
+
+    setSelectedFoods((prev) => {
+      const existing = prev.find((sf) => sf.food.id === foodToSelectAmount.id);
+      if (existing) {
+        // GÜNCELLEME (Ekleme değil, miktar değiştirme)
+        return prev.map((sf) =>
+          sf.food.id === foodToSelectAmount.id ? { ...sf, grams } : sf,
+        );
+      }
+      return [...prev, { food: foodToSelectAmount, grams }];
+    });
     setSearchQuery("");
     setSearchResults([]);
+    setFoodToSelectAmount(null);
   };
 
   const handleRemoveFood = (foodId: string) => {
     setSelectedFoods(selectedFoods.filter((sf) => sf.food.id !== foodId));
   };
 
-  const handleUpdateGrams = (foodId: string, grams: number) => {
-    setSelectedFoods(
-      selectedFoods.map((sf) =>
-        sf.food.id === foodId ? { ...sf, grams: Math.max(0, grams) } : sf,
-      ),
-    );
-  };
-
   const calculateMacros = () => {
     return selectedFoods.reduce(
       (acc, sf) => {
+        if (!sf.food) return acc;
         const factor = sf.grams / 100;
         return {
           calories: acc.calories + sf.food.calories_per_100g * factor,
@@ -86,44 +109,94 @@ function AddMealModalContent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !mealName.trim() || selectedFoods.length === 0) return;
+    if (!user || !mealName.trim()) return;
 
     setIsSubmitting(true);
     try {
-      // 1. Create Meal
-      const { data: meal, error: mealError } = await supabase
-        .from("meals")
-        .insert([{ user_id: user.id, name: mealName.trim() }])
-        .select()
-        .single();
+      let mealId = mealToEdit?.id;
 
-      if (mealError) throw mealError;
+      if (mealToEdit) {
+        // 1. Update Meal Name
+        const { error: updateError } = await supabase
+          .from("meals")
+          .update({ name: mealName.trim() })
+          .eq("id", mealToEdit.id);
 
-      // 2. Create Meal Foods
-      const mealFoodsToInsert = selectedFoods.map((sf) => {
-        const factor = sf.grams / 100;
-        return {
-          meal_id: meal.id,
-          food_id: sf.food.id,
-          grams: sf.grams,
-          calories: sf.food.calories_per_100g * factor,
-          protein: sf.food.protein_g_per_100g * factor,
-          carbs: sf.food.carbs_g_per_100g * factor,
-          fat: sf.food.fat_g_per_100g * factor,
-        };
-      });
+        if (updateError) throw updateError;
 
-      const { error: foodsError } = await supabase
-        .from("meal_foods")
-        .insert(mealFoodsToInsert);
+        // 2. Delete Existing Foods
+        const { error: deleteError } = await supabase
+          .from("meal_foods")
+          .delete()
+          .eq("meal_id", mealToEdit.id);
 
-      if (foodsError) throw foodsError;
+        if (deleteError) throw deleteError;
+      } else {
+        // 1. Create New Meal
+        const { data: meal, error: mealError } = await supabase
+          .from("meals")
+          .insert([{ user_id: user.id, name: mealName.trim() }])
+          .select()
+          .single();
+
+        if (mealError) throw mealError;
+        mealId = meal.id;
+      }
+
+      // 2. Insert Meal Foods
+      const mealFoodsToInsert = selectedFoods
+        .filter((sf) => sf.food)
+        .map((sf) => {
+          const factor = sf.grams / 100;
+          return {
+            meal_id: mealId,
+            food_id: sf.food.id,
+            grams: sf.grams,
+            calories: sf.food.calories_per_100g * factor,
+            protein: sf.food.protein_g_per_100g * factor,
+            carbs: sf.food.carbs_g_per_100g * factor,
+            fat: sf.food.fat_g_per_100g * factor,
+          };
+        });
+
+      if (mealFoodsToInsert.length > 0) {
+        const { error: foodsError } = await supabase
+          .from("meal_foods")
+          .insert(mealFoodsToInsert);
+
+        if (foodsError) throw foodsError;
+      }
 
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Error creating meal:", error);
+      console.error("Error saving meal:", error);
       alert("Öğün kaydedilirken bir hata oluştu.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteMeal = async () => {
+    if (!mealToEdit || !user) return;
+    setShowDeleteConfirm(false);
+
+    setIsSubmitting(true);
+    try {
+      // Meal Foods'lar veritabanında cascade delete değilse manuel silmek gerekebilir.
+      // Ancak genellikle setup'ımızda meals silinince bağlı meal_foods'lar silinir.
+      const { error } = await supabase
+        .from("meals")
+        .delete()
+        .eq("id", mealToEdit.id);
+
+      if (error) throw error;
+
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Error deleting meal:", error);
+      alert("Öğün silinirken bir hata oluştu.");
     } finally {
       setIsSubmitting(false);
     }
@@ -139,7 +212,7 @@ function AddMealModalContent({
       <div className="p-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Utensils className="w-5 h-5 text-emerald-500" />
-          Yeni Öğün Ekle
+          {mealToEdit ? "Öğünü Düzenle" : "Yeni Öğün Ekle"}
         </h2>
       </div>
 
@@ -213,47 +286,51 @@ function AddMealModalContent({
             selectedFoods.map((sf) => (
               <div
                 key={sf.food.id}
-                className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30"
+                onClick={() => handleAddFood(sf.food)} // Mevcut handleAddFood modalı açıyor
+                className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group"
               >
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                  <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                     {sf.food.name}
                   </h4>
-                  <div className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400 font-medium">
-                    <span>
+                  <div className="flex items-center gap-3 text-[10px] font-bold tracking-tight mt-1">
+                    <span className="text-red-500">
                       {Math.round(sf.food.calories_per_100g * (sf.grams / 100))}{" "}
                       kcal
                     </span>
-                    <span>•</span>
-                    <span>
+                    <span className="text-gray-300 dark:text-gray-700">|</span>
+                    <span className="text-blue-500">
                       P:{" "}
                       {Math.round(
                         sf.food.protein_g_per_100g * (sf.grams / 100),
                       )}
                       g
                     </span>
+                    <span className="text-yellow-500">
+                      K:{" "}
+                      {Math.round(sf.food.carbs_g_per_100g * (sf.grams / 100))}g
+                    </span>
+                    <span className="text-orange-500">
+                      Y: {Math.round(sf.food.fat_g_per_100g * (sf.grams / 100))}
+                      g
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-2 h-8">
-                    <input
-                      type="number"
-                      className="w-12 bg-transparent text-center text-sm font-bold text-gray-900 dark:text-white outline-none"
-                      value={sf.grams}
-                      onChange={(e) =>
-                        handleUpdateGrams(
-                          sf.food.id,
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                    />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase">
+                  <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-3 h-8">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                      {sf.grams}
+                    </span>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase ml-1">
                       g
                     </span>
                   </div>
                   <button
                     type="button"
-                    onClick={() => handleRemoveFood(sf.food.id)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Modalın açılmasını engelle
+                      handleRemoveFood(sf.food.id);
+                    }}
                     className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -281,7 +358,7 @@ function AddMealModalContent({
             <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-tight">
               Kalori
             </span>
-            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+            <span className="text-sm font-bold text-red-500">
               {Math.round(totals.calories)}
             </span>
           </div>
@@ -295,9 +372,9 @@ function AddMealModalContent({
           </div>
           <div>
             <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-tight">
-              Karbon.
+              Karb.
             </span>
-            <span className="text-sm font-bold text-orange-500">
+            <span className="text-sm font-bold text-yellow-500">
               {Math.round(totals.carbs)}g
             </span>
           </div>
@@ -305,30 +382,63 @@ function AddMealModalContent({
             <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-tight">
               Yağ
             </span>
-            <span className="text-sm font-bold text-red-500">
+            <span className="text-sm font-bold text-orange-500">
               {Math.round(totals.fat)}g
             </span>
           </div>
         </div>
 
         <div className="flex gap-3">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
-            İptal
-          </Button>
+          {mealToEdit ? (
+            <Button
+              variant="secondaryRed"
+              className="flex-1 text-red-500 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-950/30"
+              onClick={() => setShowDeleteConfirm(true)}
+              disabled={isSubmitting}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              SİL
+            </Button>
+          ) : (
+            <Button variant="ghost" className="flex-1" onClick={onClose}>
+              İptal
+            </Button>
+          )}
           <Button
             type="submit"
             variant="primary"
             className="flex-[2] h-12 flex items-center justify-center gap-2"
-            disabled={
-              !mealName.trim() || selectedFoods.length === 0 || isSubmitting
-            }
+            disabled={!mealName.trim() || isSubmitting}
             loading={isSubmitting}
           >
             <Save className="w-4 h-4" />
-            Öğünü Kaydet
+            {mealToEdit ? "Güncelle" : "Öğünü Kaydet"}
           </Button>
         </div>
       </div>
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteMeal}
+        title="Öğünü Sil"
+        message="Bu öğünü ve içindeki tüm besinleri silmek istediğine emin misin? Bu işlem geri alınamaz."
+        confirmText="Öğünü Sil"
+        cancelText="Vazgeç"
+        variant="danger"
+        isLoading={isSubmitting}
+      />
+
+      <FoodAmountSelectionModal
+        key={foodToSelectAmount?.id}
+        isOpen={!!foodToSelectAmount}
+        onClose={() => setFoodToSelectAmount(null)}
+        food={foodToSelectAmount}
+        onConfirm={onConfirmAmount}
+        initialGrams={
+          selectedFoods.find((sf) => sf.food.id === foodToSelectAmount?.id)
+            ?.grams
+        }
+      />
     </form>
   );
 }
@@ -337,6 +447,7 @@ export default function AddMealModal({
   isOpen,
   onClose,
   onSuccess,
+  mealToEdit,
 }: AddMealModalProps) {
   return (
     <Modal
@@ -347,7 +458,12 @@ export default function AddMealModal({
       showCloseButton={true}
       closeButtonClassName="top-6 right-6"
     >
-      <AddMealModalContent onClose={onClose} onSuccess={onSuccess} />
+      <AddMealModalContent
+        key={mealToEdit?.id || "new"}
+        onClose={onClose}
+        onSuccess={onSuccess}
+        mealToEdit={mealToEdit}
+      />
     </Modal>
   );
 }

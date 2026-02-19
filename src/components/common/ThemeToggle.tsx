@@ -11,6 +11,7 @@ export function ThemeToggle() {
 
   return (
     <Button
+      variant="secondary"
       size="md"
       onClick={toggleTheme}
       className="!p-2 rounded-full border border-gray-100 dark:border-gray-800 bg-gray-100 dark:bg-gray-800 shadow-sm hover:shadow-md transition-all flex items-center gap-2"
