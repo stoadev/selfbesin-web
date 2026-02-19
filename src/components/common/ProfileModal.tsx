@@ -30,13 +30,13 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
       setLoading(true);
 
       try {
-        const { data, error, status } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select(`username, avatar_url, full_name, updated_at`)
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (error && status !== 406) {
+        if (error) {
           throw error;
         }
 
