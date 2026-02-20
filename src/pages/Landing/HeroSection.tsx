@@ -225,7 +225,7 @@ export default function HeroSection() {
                 onClick={handleSuggest}
                 className="!p-2"
               >
-                <Lightbulb className="w-4 h-4" />
+                <Lightbulb className="w-5 h-5 text-amber-400 opacity-70" />
               </Button>
               <Button
                 variant="primary"
