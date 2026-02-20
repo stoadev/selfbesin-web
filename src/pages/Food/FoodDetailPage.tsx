@@ -1,6 +1,13 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Flame, Beef, Wheat, Droplets } from "lucide-react";
+import {
+  ArrowLeft,
+  Flame,
+  Beef,
+  Wheat,
+  Droplets,
+  Utensils,
+} from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
 import Button from "../../components/common/Button";
@@ -77,11 +84,10 @@ export default function FoodDetailPage() {
 
   return (
     <>
-      {/* Üst bar */}
-      <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-30">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-30">
         <Link
           to="/"
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </Link>
@@ -90,7 +96,29 @@ export default function FoodDetailPage() {
         </h1>
       </div>
 
-      <div className="w-full max-lg mx-auto px-5 py-8 flex flex-col gap-8 pb-32">
+      <div className="w-full max-w-lg mx-auto px-5 py-6 flex flex-col gap-4 pb-10">
+        {/* Daraltılmış ve kompakt Hero Görsel Kartı */}
+        <div className="w-[80%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative">
+          {food.image_url ? (
+            <img
+              src={food.image_url}
+              alt={food.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center gap-2 opacity-40">
+              <Utensils className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-200 uppercase tracking-widest">
+                Görsel Yok
+              </span>
+            </div>
+          )}
+
+          {/* Dekoratif Gradyan Overlay (Sadece Resim Varsa) */}
+          {food.image_url && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60" />
+          )}
+        </div>
         {/* Porsiyon seçici */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">

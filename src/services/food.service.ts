@@ -1,13 +1,11 @@
-import { MeiliSearch } from "meilisearch";
+import { MeiliSearch, Index } from "meilisearch";
 import { supabase } from "../lib/supabase";
 import type { Food } from "../types";
 
 const meiliUrl = import.meta.env.VITE_MEILISEARCH_URL;
 const meiliKey = import.meta.env.VITE_MEILISEARCH_API_KEY;
 
-let index: {
-  search: (query: string, options: any) => Promise<{ hits: any[] }>;
-} | null = null;
+let index: Index<Food> | null = null;
 
 if (meiliUrl && meiliKey) {
   try {
@@ -33,7 +31,7 @@ export const foodService = {
 
     try {
       const result = await index.search(q, { limit: 20 });
-      return result.hits as Food[];
+      return result.hits;
     } catch (err) {
       console.error("MeiliSearch search error:", err);
       return [];
