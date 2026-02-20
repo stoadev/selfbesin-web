@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Search,
   Lightbulb,
@@ -17,6 +17,7 @@ import type { Food } from "../../types";
 
 export default function HeroSection() {
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -65,13 +66,26 @@ export default function HeroSection() {
     };
   }, [debouncedQuery]);
 
+  // Desktop'ta otomatik odaklanma
+  useEffect(() => {
+    if (!isMobile()) {
+      searchInputRef.current?.focus();
+    }
+  }, []);
+
   const isMobile = () => window.innerWidth < 640;
 
   function handleFocus() {
     setIsFocused(true);
+    // Google tarzı: Odaklanınca direkt dropdown açılmasın (mobilde arama sayfası açılmaya devam eder)
     if (isMobile()) {
       setIsSearchOpen(true);
-    } else {
+    }
+  }
+
+  // Arama çubuğu tıklama (Dropdown'ı zorla açmak için)
+  function handleInputClick() {
+    if (!isMobile()) {
       setIsDropdownOpen(true);
     }
   }
@@ -82,8 +96,8 @@ export default function HeroSection() {
       const food = await foodService.getRandomFood();
       if (food) {
         setQuery(food.name);
-        // İstersek direkt arama da yapabiliriz veya sadece input'u doldurabiliriz
-        // Şimdilik sadece inputu dolduruyoruz, kullanıcı enter'a basabilir veya bekleyebilir
+        // Yazı gelince dropdown'ı açalım ki sonuçlar görünsün
+        if (!isMobile()) setIsDropdownOpen(true);
       }
     } catch (error) {
       console.error("Error getting random food:", error);
@@ -146,38 +160,65 @@ export default function HeroSection() {
 
           {/* Arama Kutusu + Dropdown */}
           <div className="w-full relative">
-            <div className="flex items-center gap-2 sm:gap-3 bg-white dark:bg-gray-800 dark:border-gray-800 border border-gray-200 rounded-full shadow-lg px-4 py-3 sm:px-5 sm:py-4 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100 transition-all">
-              <Search className="text-gray-400 w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                onFocus={handleFocus}
-                onBlur={() => {
-                  setIsFocused(false);
-                  setTimeout(() => setIsDropdownOpen(false), 200); // Tıklama için biraz daha süre tanı
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setIsKeyboardNav(true);
-                    setSelectedIndex((i) =>
-                      Math.min(i + 1, results.length - 1),
-                    );
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setIsKeyboardNav(true);
-                    setSelectedIndex((i) => Math.max(i - 1, 0));
-                  } else if (e.key === "Enter") {
-                    handleSearch();
+            <div
+              className={`flex items-center gap-2 sm:gap-3 bg-white dark:bg-gray-800 border rounded-full shadow-lg px-4 py-3 sm:px-5 sm:py-4 transition-all duration-300 ${
+                isDropdownOpen
+                  ? "border-emerald-400 ring-2 ring-emerald-100 dark:ring-emerald-900/20 dark:border-emerald-500"
+                  : "border-gray-200 dark:border-gray-800"
+              }`}
+            >
+              <Search
+                className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-colors ${isDropdownOpen ? "text-emerald-500" : "text-gray-400"}`}
+              />
+              {/* Mobil için odaklanmayan tetikleyici, Masaüstü için aktif input */}
+              <div
+                className="flex-1 flex"
+                onClick={() => {
+                  if (
+                    typeof window !== "undefined" &&
+                    window.innerWidth < 640
+                  ) {
+                    setIsSearchOpen(true);
                   }
                 }}
-                placeholder="Elma, yumurta..."
-                className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
-              />
+              >
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSelectedIndex(0);
+                    if (!isMobile()) setIsDropdownOpen(true);
+                  }}
+                  onClick={handleInputClick}
+                  onFocus={handleFocus}
+                  onBlur={() => {
+                    setIsFocused(false);
+                    setTimeout(() => setIsDropdownOpen(false), 200);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      setIsKeyboardNav(true);
+                      setSelectedIndex((i) =>
+                        Math.min(i + 1, results.length - 1),
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setIsKeyboardNav(true);
+                      setSelectedIndex((i) => Math.max(i - 1, 0));
+                    } else if (e.key === "Enter") {
+                      handleSearch();
+                    }
+                  }}
+                  placeholder="Elma, yumurta..."
+                  className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
+                  {...(typeof window !== "undefined" && window.innerWidth < 640
+                    ? { readOnly: true, tabIndex: -1 }
+                    : {})}
+                />
+              </div>
               <Button
                 variant="third"
                 size="md"

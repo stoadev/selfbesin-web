@@ -31,12 +31,30 @@ export default function SearchOverlay({
   onAddSearch,
 }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Overlay açılınca input'a odaklan
+  // Overlay açılınca input'a odaklan ve scroll'u kilitle
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
+      // Body scroll'u kilitle
+      const originalStyle = window.getComputedStyle(document.body).overflow;
+      document.body.style.overflow = "hidden";
+
+      // Scroll pozisyonunu sıfırla (zıplamayı engellemek için)
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+      }
+
+      // Input'a odaklan (preventScroll: true ile sayfanın zıplamasını engelle)
+      const timer = setTimeout(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      }, 50);
+
+      return () => {
+        document.body.style.overflow = originalStyle;
+        clearTimeout(timer);
+      };
     }
   }, [isOpen]);
 
@@ -78,7 +96,24 @@ export default function SearchOverlay({
       </div>
 
       {/* Sonuç listesi */}
-      <div className="flex-1 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto"
+        onTouchMove={() => {
+          if (document.activeElement === inputRef.current) {
+            inputRef.current?.blur();
+          }
+        }}
+        onScroll={() => {
+          // Desktop için yedek
+          if (
+            document.activeElement === inputRef.current &&
+            window.innerWidth > 768
+          ) {
+            inputRef.current?.blur();
+          }
+        }}
+      >
         {isLoading ? (
           <div className="flex items-center justify-center py-10">
             <div className="text-gray-400 text-sm">Aranıyor...</div>
@@ -105,21 +140,21 @@ export default function SearchOverlay({
             ))}
           </ul>
         ) : !query && recentSearches.length > 0 ? (
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-2">
+          <div className="p-0">
+            <div className="sticky top-0 bg-white dark:bg-gray-900 px-4 py-3 border-b border-gray-50 dark:border-gray-800 flex items-center justify-between z-10">
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                 Son Aramalar
               </span>
               {onClearHistory && (
                 <button
                   onClick={onClearHistory}
-                  className="text-xs text-gray-400 hover:text-red-500"
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
                 >
                   Temizle
                 </button>
               )}
             </div>
-            <ul>
+            <ul className="px-4">
               {recentSearches.map((term, index) => (
                 <li
                   key={index}

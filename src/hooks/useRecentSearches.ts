@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const STORAGE_KEY = "recent_searches";
-const MAX_ITEMS = 5;
+const MAX_ITEMS = 10;
 
 export function useRecentSearches() {
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {

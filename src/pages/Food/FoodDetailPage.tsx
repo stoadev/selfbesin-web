@@ -18,6 +18,8 @@ export default function FoodDetailPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
 
+  const [selectionMode, setSelectionMode] = useState<"gram" | "unit">("gram");
+
   useEffect(() => {
     async function fetchFood() {
       if (!slug) return;
@@ -26,11 +28,8 @@ export default function FoodDetailPage() {
       setFood(data);
 
       // Varsayılan porsiyonu ayarla
-      if (data?.serving_unit_grams) {
-        setServing(data.serving_unit_grams);
-      } else {
-        setServing(100);
-      }
+      setServing(100);
+      setSelectionMode("gram");
 
       setLoading(false);
     }
@@ -65,10 +64,16 @@ export default function FoodDetailPage() {
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
-  const isUnitSelected = (unitCount: number) => {
-    if (!food.serving_unit_grams) return false;
-    return Math.abs(serving - food.serving_unit_grams * unitCount) < 1;
-  };
+  // Slider değerleri
+  const sliderMin = selectionMode === "gram" ? 10 : 1;
+  const sliderMax = selectionMode === "gram" ? 500 : 10;
+  const sliderStep = selectionMode === "gram" ? 5 : 1;
+  const sliderValue =
+    selectionMode === "gram"
+      ? serving
+      : food?.serving_unit_grams
+        ? serving / food.serving_unit_grams
+        : 1;
 
   return (
     <>
@@ -90,21 +95,21 @@ export default function FoodDetailPage() {
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {food.serving_unit_name
-                ? `${food.serving_unit_name.charAt(0).toUpperCase() + food.serving_unit_name.slice(1)} / Gram`
-                : "Porsiyon (gram)"}
+              {selectionMode === "unit" && food.serving_unit_name
+                ? `${food.serving_unit_name.charAt(0).toUpperCase() + food.serving_unit_name.slice(1)}`
+                : "Ağırlık (gram)"}
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
-                {serving}g
+                {selectionMode === "unit" && food.serving_unit_grams
+                  ? (serving / food.serving_unit_grams)
+                      .toFixed(1)
+                      .replace(".0", "")
+                  : `${serving}g`}
               </span>
-              {food.serving_unit_name && food.serving_unit_grams && (
-                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500">
-                  (
-                  {(serving / food.serving_unit_grams)
-                    .toFixed(1)
-                    .replace(".0", "")}{" "}
-                  {food.serving_unit_name})
+              {selectionMode === "unit" && food.serving_unit_name && (
+                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 ml-1">
+                  {food.serving_unit_name} ({serving}g)
                 </span>
               )}
             </div>
@@ -112,48 +117,70 @@ export default function FoodDetailPage() {
           <div className="flex flex-col gap-4">
             <input
               type="range"
-              min={10}
-              max={500}
-              step={5}
-              value={serving}
+              min={sliderMin}
+              max={sliderMax}
+              step={sliderStep}
+              value={sliderValue}
               onChange={(e) => {
-                setServing(Number(e.target.value));
+                const val = Number(e.target.value);
+                if (selectionMode === "gram") {
+                  setServing(val);
+                } else if (food.serving_unit_grams) {
+                  setServing(val * food.serving_unit_grams);
+                }
                 setIsAdded(false);
               }}
               className="flex-1 accent-emerald-600 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
               style={{
                 background: `linear-gradient(to right, #10b981 0%, #10b981 ${
-                  ((serving - 10) / (500 - 10)) * 100
+                  ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
                 }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} ${
-                  ((serving - 10) / (500 - 10)) * 100
+                  ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
                 }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} 100%)`,
               }}
             />
 
             {/* Hızlı Birim Seçimi */}
-            {food.serving_unit_name && food.serving_unit_grams && (
-              <div className="flex gap-2">
-                {[1, 2, 3, 4].map((unitCount) => (
-                  <button
-                    key={unitCount}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setServing(food.serving_unit_grams! * unitCount);
-                      setIsAdded(false);
-                    }}
-                    className={`flex-1 py-3 px-1 rounded-xl border text-[10px] font-bold transition-all duration-200 ${
-                      isUnitSelected(unitCount)
-                        ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                        : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
-                    }`}
-                  >
-                    {unitCount} {food.serving_unit_name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="flex gap-2">
+              {[
+                {
+                  label: "Gram",
+                  grams: 100,
+                  mode: "gram" as const,
+                },
+                ...(food.serving_unit_name && food.serving_unit_grams
+                  ? [
+                      {
+                        label: `1 ${
+                          food.serving_unit_name.charAt(0).toUpperCase() +
+                          food.serving_unit_name.slice(1)
+                        }`,
+                        grams: food.serving_unit_grams,
+                        mode: "unit" as const,
+                      },
+                    ]
+                  : []),
+              ].map((option, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setServing(option.grams);
+                    setSelectionMode(option.mode);
+                    setIsAdded(false);
+                  }}
+                  className={`flex-1 py-3 px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
+                    selectionMode === option.mode
+                      ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                      : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
