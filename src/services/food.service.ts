@@ -2,20 +2,42 @@ import { MeiliSearch } from "meilisearch";
 import { supabase } from "../lib/supabase";
 import type { Food } from "../types";
 
-const client = new MeiliSearch({
-  host: import.meta.env.VITE_MEILISEARCH_URL,
-  apiKey: import.meta.env.VITE_MEILISEARCH_API_KEY,
-});
+const meiliUrl = import.meta.env.VITE_MEILISEARCH_URL;
+const meiliKey = import.meta.env.VITE_MEILISEARCH_API_KEY;
 
-const index = client.index("foods");
+let index: {
+  search: (query: string, options: any) => Promise<{ hits: any[] }>;
+} | null = null;
+
+if (meiliUrl && meiliKey) {
+  try {
+    const client = new MeiliSearch({
+      host: meiliUrl,
+      apiKey: meiliKey,
+    });
+    index = client.index("foods");
+  } catch (err) {
+    console.error("MeiliSearch initialization error:", err);
+  }
+}
 
 export const foodService = {
   async searchFoods(query: string): Promise<Food[]> {
     const q = query.trim();
     if (!q || q.length < 2) return [];
 
-    const result = await index.search(q, { limit: 20 });
-    return result.hits as Food[];
+    if (!index) {
+      console.warn("MeiliSearch index not initialized. Search is disabled.");
+      return [];
+    }
+
+    try {
+      const result = await index.search(q, { limit: 20 });
+      return result.hits as Food[];
+    } catch (err) {
+      console.error("MeiliSearch search error:", err);
+      return [];
+    }
   },
 
   async getFoodById(id: string): Promise<Food | null> {

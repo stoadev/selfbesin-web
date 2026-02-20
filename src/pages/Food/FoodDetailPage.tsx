@@ -24,6 +24,14 @@ export default function FoodDetailPage() {
       setLoading(true);
       const data = await foodService.getFoodBySlug(slug);
       setFood(data);
+
+      // Varsayılan porsiyonu ayarla
+      if (data?.serving_unit_grams) {
+        setServing(data.serving_unit_grams);
+      } else {
+        setServing(100);
+      }
+
       setLoading(false);
     }
     fetchFood();

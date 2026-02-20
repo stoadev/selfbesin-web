@@ -50,15 +50,24 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
         }
 
         // Avatar handling with metadata fallback
-        if (profileData?.avatar_url) {
+        if (
+          profileData?.avatar_url &&
+          typeof profileData.avatar_url === "string"
+        ) {
           if (profileData.avatar_url.startsWith("http")) {
             setAvatarUrl(profileData.avatar_url);
           } else {
             downloadImage(profileData.avatar_url);
           }
-        } else if (user.user_metadata?.avatar_url) {
+        } else if (
+          user.user_metadata?.avatar_url &&
+          typeof user.user_metadata.avatar_url === "string"
+        ) {
           setAvatarUrl(user.user_metadata.avatar_url);
-        } else if (user.user_metadata?.picture) {
+        } else if (
+          user.user_metadata?.picture &&
+          typeof user.user_metadata.picture === "string"
+        ) {
           setAvatarUrl(user.user_metadata.picture);
         }
       } catch (error) {

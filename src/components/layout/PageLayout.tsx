@@ -18,7 +18,7 @@ export default function PageLayout({
   const location = useLocation();
 
   const isMealsPage = location.pathname === "/meals";
-  const isDetailsPage = location.pathname.startsWith("/besin/");
+  const isDetailsPage = location.pathname?.startsWith("/besin/");
 
   return (
     <div

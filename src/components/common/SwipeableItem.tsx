@@ -73,7 +73,10 @@ export default function SwipeableItem({
   }, [isOpen]);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden group">
+    <div
+      ref={containerRef}
+      className="relative overflow-hidden group rounded-3xl"
+    >
       {/* Arka Plan Eylemleri */}
       <div className="absolute inset-0 flex justify-end items-stretch pointer-events-none">
         {actions.map((action, index) => (
@@ -101,7 +104,7 @@ export default function SwipeableItem({
 
       {/* Ön Plan İçerik */}
       <div
-        className="relative transition-transform duration-200 ease-out will-change-transform bg-white dark:bg-gray-950"
+        className="relative transition-transform duration-200 ease-out will-change-transform bg-white dark:bg-gray-950 rounded-3xl"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}

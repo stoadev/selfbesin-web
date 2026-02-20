@@ -32,7 +32,7 @@ export default function Navbar() {
 
         const profile = data?.[0];
 
-        if (profile?.avatar_url) {
+        if (profile?.avatar_url && typeof profile.avatar_url === "string") {
           if (profile.avatar_url.startsWith("http")) {
             setAvatarUrl(profile.avatar_url);
           } else {
