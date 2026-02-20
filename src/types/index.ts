@@ -8,6 +8,7 @@ export interface Food {
   fat_g_per_100g: number;
   serving_unit_name?: string;
   serving_unit_grams?: number;
+  image_url?: string;
   created_at?: string;
 }
 
