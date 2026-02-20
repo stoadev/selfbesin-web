@@ -225,7 +225,7 @@ export default function HeroSection() {
                 onClick={handleSuggest}
                 className="!p-2"
               >
-                <Lightbulb className="w-5 h-5 text-amber-400 opacity-70" />
+                <Lightbulb className="w-5 h-5 text-emerald-600" />
               </Button>
               <Button
                 variant="primary"
@@ -237,7 +237,7 @@ export default function HeroSection() {
                 }}
                 className={`transition-opacity ${isFocused || query ? "opacity-100" : "opacity-50"}`}
               >
-                <SendHorizontal className="w-3 h-3 sm:w-4 sm:h-4" />
+                <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
               </Button>
             </div>
 
