@@ -23,7 +23,6 @@ export default function HeroSection() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isFocused, setIsFocused] = useState(false);
   const [isKeyboardNav, setIsKeyboardNav] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchedQuery, setLastFetchedQuery] = useState("");
@@ -64,7 +63,7 @@ export default function HeroSection() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, setSelectedIndex]);
 
   // Desktop'ta otomatik odaklanma
   useEffect(() => {
@@ -76,7 +75,6 @@ export default function HeroSection() {
   const isMobile = () => window.innerWidth < 640;
 
   function handleFocus() {
-    setIsFocused(true);
     // Google tarzı: Odaklanınca direkt dropdown açılmasın (mobilde arama sayfası açılmaya devam eder)
     if (isMobile()) {
       setIsSearchOpen(true);
@@ -194,7 +192,6 @@ export default function HeroSection() {
                   onClick={handleInputClick}
                   onFocus={handleFocus}
                   onBlur={() => {
-                    setIsFocused(false);
                     setTimeout(() => setIsDropdownOpen(false), 200);
                   }}
                   onKeyDown={(e) => {
@@ -230,12 +227,12 @@ export default function HeroSection() {
               <Button
                 variant="primary"
                 size="md"
-                disabled={!isFocused && !query.trim()}
+                disabled={!query.trim()}
                 onMouseDown={(e: React.MouseEvent) => {
                   e.preventDefault();
                   handleSearch();
                 }}
-                className={`transition-opacity ${isFocused || query ? "opacity-100" : "opacity-50"}`}
+                className={`transition-opacity ${query.trim() ? "opacity-100" : "opacity-50"}`}
               >
                 <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
               </Button>
