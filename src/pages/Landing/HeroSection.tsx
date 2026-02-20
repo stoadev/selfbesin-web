@@ -5,6 +5,7 @@ import {
   SendHorizontal,
   ChevronRight,
   Clock,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
@@ -128,6 +129,7 @@ export default function HeroSection() {
         onRecentSelect={(term) => setQuery(term)}
         onClearHistory={clearHistory}
         onRemoveRecent={removeSearch}
+        onAddSearch={addSearch}
       />
       <section className="flex-1 flex items-center justify-center px-4 sm:px-6">
         <div className="w-full max-w-3xl mx-auto py-10 sm:py-20 flex flex-col items-center text-center gap-6 sm:gap-10 -mt-32 sm:-mt-20">
@@ -214,6 +216,7 @@ export default function HeroSection() {
                 recentSearches={recentSearches}
                 onRecentSelect={(term) => setQuery(term)}
                 onAddSearch={addSearch}
+                onRemoveSearch={removeSearch}
               />
             )}
           </div>
@@ -235,6 +238,7 @@ function DesktopDropdown({
   recentSearches,
   onRecentSelect,
   onAddSearch,
+  onRemoveSearch,
 }: {
   query: string;
   onClose: () => void;
@@ -246,6 +250,7 @@ function DesktopDropdown({
   recentSearches: string[];
   onRecentSelect: (term: string) => void;
   onAddSearch: (term: string) => void;
+  onRemoveSearch: (term: string) => void;
 }) {
   const navigate = useNavigate();
 
@@ -260,17 +265,31 @@ function DesktopDropdown({
         </div>
         <ul>
           {recentSearches.map((term, index) => (
-            <li key={index}>
+            <li
+              key={index}
+              className="group flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+            >
               <button
                 onMouseDown={() => {
                   onRecentSelect(term);
                 }}
-                className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left group"
+                className="flex-1 flex items-center gap-3 px-5 py-3 text-left"
               >
                 <Clock className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors shrink-0" />
-                <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">
+                <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                   {term}
                 </span>
+              </button>
+              <button
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onRemoveSearch(term);
+                }}
+                className="p-3 text-gray-300 hover:text-red-500 transition-colors"
+                title="Sil"
+              >
+                <X className="w-4 h-4" />
               </button>
             </li>
           ))}

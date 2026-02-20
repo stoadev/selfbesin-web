@@ -1,22 +1,21 @@
+import { MeiliSearch } from "meilisearch";
 import { supabase } from "../lib/supabase";
 import type { Food } from "../types";
 
+const client = new MeiliSearch({
+  host: import.meta.env.VITE_MEILISEARCH_URL,
+  apiKey: import.meta.env.VITE_MEILISEARCH_API_KEY,
+});
+
+const index = client.index("foods");
+
 export const foodService = {
   async searchFoods(query: string): Promise<Food[]> {
-    if (!query.trim()) return [];
+    const q = query.trim();
+    if (!q || q.length < 2) return [];
 
-    const { data, error } = await supabase
-      .from("foods")
-      .select("*")
-      .ilike("name", `%${query}%`)
-      .limit(10);
-
-    if (error) {
-      console.error("Error searching foods:", error);
-      return [];
-    }
-
-    return data || [];
+    const result = await index.search(q, { limit: 20 });
+    return result.hits as Food[];
   },
 
   async getFoodById(id: string): Promise<Food | null> {
@@ -48,6 +47,7 @@ export const foodService = {
 
     return data;
   },
+
   async getRandomFood(): Promise<Food | null> {
     const { count, error: countError } = await supabase
       .from("foods")

@@ -14,6 +14,7 @@ type SearchOverlayProps = {
   onRecentSelect?: (term: string) => void;
   onClearHistory?: () => void;
   onRemoveRecent?: (term: string) => void;
+  onAddSearch?: (term: string) => void;
 };
 
 export default function SearchOverlay({
@@ -27,6 +28,7 @@ export default function SearchOverlay({
   onRecentSelect,
   onClearHistory,
   onRemoveRecent,
+  onAddSearch,
 }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
@@ -42,9 +44,8 @@ export default function SearchOverlay({
 
   function handleSelect(food: Food) {
     onClose();
-    // Aramayı History'e ekleme parent tarafından yapılmalı (HeroSection vs)
-    // Ama burada direkt navigate ediyoruz, o yüzden props ile addSearch fonksiyonu da alabilirdik
-    // Şimdilik sadece navigate
+    // Aramayı History'e ekle
+    onAddSearch?.(food.name);
     navigate(`/besin/${food.slug}`);
   }
 
