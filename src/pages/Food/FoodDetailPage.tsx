@@ -7,6 +7,7 @@ import {
   Wheat,
   Droplets,
   Utensils,
+  X,
 } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
@@ -20,10 +21,11 @@ export default function FoodDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [food, setFood] = useState<Food | null>(null);
   const [loading, setLoading] = useState(true);
-  const [serving, setServing] = useState(100);
+  const [serving, setServing] = useState(0);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState<"gram" | "unit">("gram");
 
@@ -34,7 +36,7 @@ export default function FoodDetailPage() {
       const data = await foodService.getFoodBySlug(slug);
       setFood(data);
 
-      // Varsayılan porsiyonu ayarla
+      // Varsayılan porsiyonu her zaman 100g olarak ayarla
       setServing(100);
       setSelectionMode("gram");
 
@@ -72,7 +74,7 @@ export default function FoodDetailPage() {
   const calc = (val: number) => (val * ratio).toFixed(1);
 
   // Slider değerleri
-  const sliderMin = selectionMode === "gram" ? 10 : 1;
+  const sliderMin = 0;
   const sliderMax = selectionMode === "gram" ? 500 : 10;
   const sliderStep = selectionMode === "gram" ? 5 : 1;
   const sliderValue =
@@ -98,12 +100,15 @@ export default function FoodDetailPage() {
 
       <div className="w-full max-w-lg mx-auto px-5 py-6 flex flex-col gap-4 pb-10">
         {/* Daraltılmış ve kompakt Hero Görsel Kartı */}
-        <div className="w-[80%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative">
+        <div
+          onClick={() => food.image_url && setIsZoomed(true)}
+          className={`w-[100%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
+        >
           {food.image_url ? (
             <img
               src={food.image_url}
               alt={food.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           ) : (
             <div className="flex flex-col items-center gap-2 opacity-40">
@@ -119,6 +124,34 @@ export default function FoodDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60" />
           )}
         </div>
+
+        {/* Görsel Zoom Lightbox (Portal alternatifi inline overlay) */}
+        {isZoomed && food.image_url && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setIsZoomed(false)}
+          >
+            <button
+              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-[110]"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsZoomed(false);
+              }}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div
+              className="w-full h-full p-4 flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={food.image_url}
+                alt={food.name}
+                className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-300"
+              />
+            </div>
+          </div>
+        )}
         {/* Porsiyon seçici */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
@@ -179,10 +212,9 @@ export default function FoodDetailPage() {
                 ...(food.serving_unit_name && food.serving_unit_grams
                   ? [
                       {
-                        label: `1 ${
+                        label:
                           food.serving_unit_name.charAt(0).toUpperCase() +
-                          food.serving_unit_name.slice(1)
-                        }`,
+                          food.serving_unit_name.slice(1),
                         grams: food.serving_unit_grams,
                         mode: "unit" as const,
                       },
@@ -212,8 +244,8 @@ export default function FoodDetailPage() {
           </div>
         </div>
 
-        {/* Makro kartları */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Makro kartları - Mobilde 2x2, PC'de 4x1 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <MacroCard
             icon={<Flame className="w-5 h-5 text-red-500" />}
             label="Kalori"
@@ -254,6 +286,7 @@ export default function FoodDetailPage() {
                 variant={isAdded ? "blueSecondary" : "blueCta"}
                 className="flex-1 h-12"
                 onClick={() => setIsAddModalOpen(true)}
+                disabled={serving <= 0}
               >
                 {isAdded ? "Besin öğüne eklendi" : "Öğününe Ekle"}
               </Button>
@@ -266,6 +299,7 @@ export default function FoodDetailPage() {
               variant="primary"
               className="w-full h-12"
               onClick={() => setIsAuthModalOpen(true)}
+              disabled={serving <= 0}
             >
               Giriş Yap
             </Button>

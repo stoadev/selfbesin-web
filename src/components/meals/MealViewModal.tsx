@@ -55,44 +55,29 @@ export default function MealViewModal({
               onClick={() => onFoodClick?.(mf)}
               className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800 transition-all group scale-[0.98] hover:scale-100"
             >
-              <div className="flex items-center gap-4 min-w-0">
+              <div className="flex items-center gap-4 min-w-0 flex-1">
                 <div className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20 transition-colors">
                   <Apple className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                     {mf.food?.name || "Bilinmeyen Besin"}
                   </h4>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                    {mf.grams}g • {Math.round(mf.calories)} kcal
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 text-right">
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tight leading-none mb-0.5">
-                      P
+                  <div className="flex justify-between items-center text-[10px] font-normal mt-1.5 w-full">
+                    <span className="text-gray-400 dark:text-gray-500">
+                      {mf.grams}g
                     </span>
-                    <span className="text-[10px] font-bold text-blue-500">
-                      {Math.round(mf.protein)}g
+                    <span className="text-red-500/80 dark:text-red-400/80">
+                      {Math.round(mf.calories)} kcal
                     </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tight leading-none mb-0.5">
-                      K
+                    <span className="text-blue-500/80 dark:text-blue-400/80">
+                      {Math.round(mf.protein)}g Prot
                     </span>
-                    <span className="text-[10px] font-bold text-yellow-500">
-                      {Math.round(mf.carbs)}g
+                    <span className="text-yellow-600/80 dark:text-yellow-500/80">
+                      {Math.round(mf.carbs)}g Karb
                     </span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[8px] text-gray-400 font-bold uppercase tracking-tight leading-none mb-0.5">
-                      Y
-                    </span>
-                    <span className="text-[10px] font-bold text-orange-500">
-                      {Math.round(mf.fat)}g
+                    <span className="text-orange-500/80 dark:text-orange-400/80">
+                      {Math.round(mf.fat)}g Yağ
                     </span>
                   </div>
                 </div>
