@@ -143,121 +143,121 @@ export default function HeroSection() {
         onRemoveRecent={removeSearch}
         onAddSearch={addSearch}
       />
-      <section className="flex-1 flex flex-col items-center justify-center px-[3dvw] sm:px-6">
-        <div className="w-full max-w-3xl mx-auto py-[4dvh] flex flex-col items-center text-center gap-[6dvh]">
-          {/* Başlık */}
-          <div className="flex flex-col gap-[1.5dvh]">
-            <h1 className="text-3xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">
-              Bugün hangi <br className="sm:hidden" />
-              <span className="text-emerald-600">besini</span> arıyorsun?
-            </h1>
-            <p className="text-xs sm:text-lg text-gray-500 dark:text-gray-400 px-[1dvw]">
-              Merak ettiğin besini ara, öğününe ekle.
-            </p>
+      <section className="flex-1 w-full flex flex-col items-center justify-center px-[3dvw] sm:px-6">
+        {/* Arama Kutusu (Çapa / Anchor) */}
+        <div className="w-full max-w-3xl relative">
+          {/* Başlık Alanı - Aramaya göre 'absolute' konumlandırıldı (Tamamen bağımsız) */}
+          <div className="absolute bottom-full left-0 right-0 mb-[10dvh] sm:mb-[10dvh] flex flex-col items-center text-center">
+            <div className="flex flex-col gap-[1.5dvh]">
+              <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">
+                Bugün hangi <br className="sm:hidden" />
+                <span className="text-emerald-600">besini</span> arıyorsun?
+              </h1>
+              <p className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 px-[1dvw]">
+                Merak ettiğin besini ara, öğününe ekle.
+              </p>
+            </div>
           </div>
 
-          {/* Arama Kutusu + Dropdown */}
-          <div className="w-full relative">
+          {/* Arama Kutusu Input Alanı */}
+          <div
+            className={`flex items-center gap-[2dvw] sm:gap-[1dvw] bg-white dark:bg-gray-800 border rounded-full shadow-lg px-[4dvw] py-3 sm:px-5 sm:py-4 transition-all duration-300 ${
+              isDropdownOpen
+                ? "border-emerald-400 ring-2 ring-emerald-100 dark:ring-emerald-900/20 dark:border-emerald-500"
+                : "border-gray-200 dark:border-gray-800"
+            }`}
+          >
+            <Search
+              className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-colors ${isDropdownOpen ? "text-emerald-500" : "text-gray-400"}`}
+            />
+
             <div
-              className={`flex items-center gap-[2dvw] sm:gap-[1dvw] bg-white dark:bg-gray-800 border rounded-full shadow-lg px-[4dvw] py-[1.8dvh] sm:px-5 sm:py-4 transition-all duration-300 ${
-                isDropdownOpen
-                  ? "border-emerald-400 ring-2 ring-emerald-100 dark:ring-emerald-900/20 dark:border-emerald-500"
-                  : "border-gray-200 dark:border-gray-800"
-              }`}
+              className="flex-1 flex"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.innerWidth < 640) {
+                  setIsSearchOpen(true);
+                }
+              }}
             >
-              <Search
-                className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-colors ${isDropdownOpen ? "text-emerald-500" : "text-gray-400"}`}
-              />
-              {/* Mobil için odaklanmayan tetikleyici, Masaüstü için aktif input */}
-              <div
-                className="flex-1 flex"
-                onClick={() => {
-                  if (
-                    typeof window !== "undefined" &&
-                    window.innerWidth < 640
-                  ) {
-                    setIsSearchOpen(true);
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedIndex(0);
+                  if (!isMobile()) setIsDropdownOpen(true);
+                }}
+                onClick={handleInputClick}
+                onFocus={handleFocus}
+                onBlur={() => {
+                  setTimeout(() => setIsDropdownOpen(false), 200);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setIsKeyboardNav(true);
+                    setSelectedIndex((i) =>
+                      Math.min(i + 1, results.length - 1),
+                    );
+                  } else if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setIsKeyboardNav(true);
+                    setSelectedIndex((i) => Math.max(i - 1, 0));
+                  } else if (e.key === "Enter") {
+                    handleSearch();
                   }
                 }}
-              >
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => {
-                    setQuery(e.target.value);
-                    setSelectedIndex(0);
-                    if (!isMobile()) setIsDropdownOpen(true);
-                  }}
-                  onClick={handleInputClick}
-                  onFocus={handleFocus}
-                  onBlur={() => {
-                    setTimeout(() => setIsDropdownOpen(false), 200);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowDown") {
-                      e.preventDefault();
-                      setIsKeyboardNav(true);
-                      setSelectedIndex((i) =>
-                        Math.min(i + 1, results.length - 1),
-                      );
-                    } else if (e.key === "ArrowUp") {
-                      e.preventDefault();
-                      setIsKeyboardNav(true);
-                      setSelectedIndex((i) => Math.max(i - 1, 0));
-                    } else if (e.key === "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  placeholder="Elma, yumurta..."
-                  className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
-                  {...(typeof window !== "undefined" && window.innerWidth < 640
-                    ? { readOnly: true, tabIndex: -1 }
-                    : {})}
-                />
-              </div>
-              <Button
-                variant="third"
-                size="md"
-                onClick={handleSuggest}
-                className="!p-2"
-              >
-                <Lightbulb className="w-5 h-5 text-emerald-600" />
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                disabled={!query.trim()}
-                onMouseDown={(e: React.MouseEvent) => {
-                  e.preventDefault();
-                  handleSearch();
-                }}
-                className={`transition-opacity ${query.trim() ? "opacity-100" : "opacity-50"}`}
-              >
-                <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
-              </Button>
+                placeholder="Elma, yumurta..."
+                className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
+                {...(typeof window !== "undefined" && window.innerWidth < 640
+                  ? { readOnly: true, tabIndex: -1 }
+                  : {})}
+              />
             </div>
 
-            {/* Masaüstü Dropdown */}
-            {isDropdownOpen && (
-              <DesktopDropdown
-                query={query}
-                onClose={() => setIsDropdownOpen(false)}
-                selectedIndex={selectedIndex}
-                onHover={(i) => {
-                  setIsKeyboardNav(false);
-                  setSelectedIndex(i);
-                }}
-                isKeyboardNav={isKeyboardNav}
-                results={results}
-                isLoading={showLoading}
-                recentSearches={recentSearches}
-                onRecentSelect={(term) => setQuery(term)}
-                onAddSearch={addSearch}
-                onRemoveSearch={removeSearch}
-              />
-            )}
+            <Button
+              variant="third"
+              size="md"
+              onClick={handleSuggest}
+              className="!p-2"
+            >
+              <Lightbulb className="w-5 h-5 text-emerald-600" />
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              disabled={!query.trim()}
+              onMouseDown={(e: React.MouseEvent) => {
+                e.preventDefault();
+                handleSearch();
+              }}
+              className={`transition-opacity ${query.trim() ? "opacity-100" : "opacity-50"}`}
+            >
+              <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
+            </Button>
           </div>
+
+          {/* Masaüstü Dropdown */}
+          {isDropdownOpen && (
+            <DesktopDropdown
+              query={query}
+              onClose={() => setIsDropdownOpen(false)}
+              selectedIndex={selectedIndex}
+              onHover={(i) => {
+                setIsKeyboardNav(false);
+                setSelectedIndex(i);
+              }}
+              isKeyboardNav={isKeyboardNav}
+              results={results}
+              isLoading={showLoading}
+              recentSearches={recentSearches}
+              onRecentSelect={(term) => setQuery(term)}
+              onAddSearch={addSearch}
+              onRemoveSearch={removeSearch}
+            />
+          )}
         </div>
       </section>
     </>
