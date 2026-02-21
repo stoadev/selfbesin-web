@@ -335,7 +335,7 @@ export default function MealsPage() {
         )}
 
         {meals.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-10 text-center border border-gray-100 dark:border-gray-800 shadow-sm flex-1 flex flex-col items-center justify-center">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-[5dvh] sm:p-10 text-center border border-gray-100 dark:border-gray-800 shadow-sm flex-1 flex flex-col items-center justify-center">
             <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center mb-3 text-emerald-600 dark:text-emerald-400">
               <Utensils className="w-6 h-6" />
             </div>
@@ -348,18 +348,12 @@ export default function MealsPage() {
           </div>
         ) : (
           <div className="flex-1 min-h-0 relative mb-[1dvh]">
-            <div className="h-[50dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
+            <div className="h-[50dvh] sm:h-[60dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
               <div className="space-y-[1dvh]">
                 {meals.map((meal) => (
                   <SwipeableItem
                     key={meal.id}
                     actions={[
-                      {
-                        label: "Çoğalt",
-                        icon: <Copy className="w-4 h-4" />,
-                        onClick: () => handleDuplicateMeal(meal),
-                        color: "bg-blue-500",
-                      },
                       {
                         label: "Düzenle",
                         icon: <Edit2 className="w-4 h-4" />,
@@ -368,6 +362,7 @@ export default function MealsPage() {
                           setIsModalOpen(true);
                         },
                         color: "bg-emerald-500",
+                        className: "rounded-l-3xl",
                       },
                       {
                         label: "Sil",
@@ -376,6 +371,13 @@ export default function MealsPage() {
                           handleDeleteMeal(meal.id);
                         },
                         color: "bg-red-500",
+                      },
+                      {
+                        label: "Çoğalt",
+                        icon: <Copy className="w-4 h-4" />,
+                        onClick: () => handleDuplicateMeal(meal),
+                        color: "bg-blue-500",
+                        className: "rounded-r-3xl",
                       },
                     ]}
                   >

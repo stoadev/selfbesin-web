@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useId } from "react";
 
 interface SwipeableItemProps {
   children: React.ReactNode;
@@ -8,6 +8,7 @@ interface SwipeableItemProps {
     onClick: () => void;
     color: string;
     textColor?: string;
+    className?: string;
   }[];
   threshold?: number;
 }
@@ -17,6 +18,7 @@ export default function SwipeableItem({
   actions,
   threshold = 60,
 }: SwipeableItemProps) {
+  const id = useId();
   const [startX, setStartX] = useState<number | null>(null);
   const [currentX, setCurrentX] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +27,9 @@ export default function SwipeableItem({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartX(e.touches[0].clientX);
+
+    // Sinyal gönder: Ben etkileşime geçiyorum, diğerleri kapansın
+    window.dispatchEvent(new CustomEvent("swipeable-open", { detail: { id } }));
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -53,6 +58,20 @@ export default function SwipeableItem({
     }
     setStartX(null);
   };
+
+  // Singleton davranış: Başka bir öğe açıldığında kendini kapat
+  useEffect(() => {
+    const handleOtherOpen = (e: Event) => {
+      const customEvent = e as CustomEvent<{ id: string }>;
+      if (customEvent.detail?.id !== id && isOpen) {
+        setCurrentX(0);
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("swipeable-open", handleOtherOpen);
+    return () => window.removeEventListener("swipeable-open", handleOtherOpen);
+  }, [id, isOpen]);
 
   // Dışarı tıklandığında kapat
   useEffect(() => {
@@ -88,7 +107,7 @@ export default function SwipeableItem({
               setCurrentX(0);
               setIsOpen(false);
             }}
-            className={`w-16 h-full flex flex-col items-center justify-center transition-all duration-200 pointer-events-auto ${action.color} ${action.textColor || "text-white"}`}
+            className={`w-16 h-full flex flex-col items-center justify-center transition-all duration-200 pointer-events-auto ${action.color} ${action.textColor || "text-white"} ${action.className || ""}`}
             style={{
               opacity: currentX < -20 ? 1 : 0,
               transform: `translateX(${isOpen ? 0 : 20}px)`,
