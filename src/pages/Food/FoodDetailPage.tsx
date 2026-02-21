@@ -28,6 +28,10 @@ export default function FoodDetailPage() {
   const [isZoomed, setIsZoomed] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState<"gram" | "unit">("gram");
+  const [activeUnit, setActiveUnit] = useState<{
+    name: string;
+    grams: number;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchFood() {
@@ -36,9 +40,37 @@ export default function FoodDetailPage() {
       const data = await foodService.getFoodBySlug(slug);
       setFood(data);
 
-      // Varsayılan porsiyonu her zaman 100g olarak ayarla
-      setServing(100);
-      setSelectionMode("gram");
+      if (data) {
+        const initialUnits =
+          data.serving_units && data.serving_units.length > 0
+            ? data.serving_units
+            : data.serving_unit_name && data.serving_unit_grams
+              ? [
+                  {
+                    name: data.serving_unit_name,
+                    grams: Number(data.serving_unit_grams),
+                  },
+                ]
+              : [];
+
+        // Önce 100 gram olan bir birim var mı diye bak
+        const unitAt100 = initialUnits.find(
+          (u: { name: string; grams: number }) => Number(u.grams) === 100,
+        );
+
+        if (unitAt100) {
+          setSelectionMode("unit");
+          setActiveUnit(unitAt100);
+          setServing(100);
+        } else if (initialUnits.length > 0) {
+          setSelectionMode("gram");
+          setActiveUnit(initialUnits[0]);
+          setServing(100);
+        } else {
+          setSelectionMode("gram");
+          setServing(100);
+        }
+      }
 
       setLoading(false);
     }
@@ -73,6 +105,14 @@ export default function FoodDetailPage() {
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
+  // Seçili birimi bul (Geriye uyumluluk için eski sütunları da kontrol et)
+  const units =
+    food.serving_units && food.serving_units.length > 0
+      ? food.serving_units
+      : food.serving_unit_name && food.serving_unit_grams
+        ? [{ name: food.serving_unit_name, grams: food.serving_unit_grams }]
+        : [];
+
   // Slider değerleri
   const sliderMin = 0;
   const sliderMax = selectionMode === "gram" ? 500 : 10;
@@ -80,9 +120,9 @@ export default function FoodDetailPage() {
   const sliderValue =
     selectionMode === "gram"
       ? serving
-      : food?.serving_unit_grams
-        ? serving / food.serving_unit_grams
-        : 1;
+      : activeUnit
+        ? serving / activeUnit.grams
+        : serving;
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900">
@@ -129,21 +169,20 @@ export default function FoodDetailPage() {
         <div className="mt-auto flex flex-col gap-[2dvh]">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-              {selectionMode === "unit" && food.serving_unit_name
-                ? `${food.serving_unit_name.charAt(0).toUpperCase() + food.serving_unit_name.slice(1)}`
-                : "Ağırlık (gram)"}
+              {selectionMode === "unit" && activeUnit
+                ? activeUnit.name.charAt(0).toUpperCase() +
+                  activeUnit.name.slice(1)
+                : "Miktar (gram)"}
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
-                {selectionMode === "unit" && food.serving_unit_grams
-                  ? (serving / food.serving_unit_grams)
-                      .toFixed(1)
-                      .replace(".0", "")
+                {selectionMode === "unit" && activeUnit
+                  ? (serving / activeUnit.grams).toFixed(1).replace(".0", "")
                   : `${serving}g`}
               </span>
-              {selectionMode === "unit" && food.serving_unit_name && (
-                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 ml-1">
-                  {food.serving_unit_name} ({serving}g)
+              {selectionMode === "unit" && activeUnit && (
+                <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-1">
+                  ({serving}g)
                 </span>
               )}
             </div>
@@ -161,8 +200,8 @@ export default function FoodDetailPage() {
                 const val = Number(e.target.value);
                 if (selectionMode === "gram") {
                   setServing(val);
-                } else if (food.serving_unit_grams) {
-                  setServing(val * food.serving_unit_grams);
+                } else if (activeUnit) {
+                  setServing(val * activeUnit.grams);
                 }
                 setIsAdded(false);
               }}
@@ -177,42 +216,45 @@ export default function FoodDetailPage() {
             />
 
             {/* Hızlı Birim Seçimi */}
-            <div className="flex gap-[1dvh]">
-              {[
-                {
-                  label: "Gram",
-                  grams: 100,
-                  mode: "gram" as const,
-                },
-                ...(food.serving_unit_name && food.serving_unit_grams
-                  ? [
-                      {
-                        label:
-                          food.serving_unit_name.charAt(0).toUpperCase() +
-                          food.serving_unit_name.slice(1),
-                        grams: food.serving_unit_grams,
-                        mode: "unit" as const,
-                      },
-                    ]
-                  : []),
-              ].map((option, idx) => (
+            <div className="flex flex-wrap gap-[1dvh]">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setServing(100);
+                  setSelectionMode("gram");
+                  setIsAdded(false);
+                }}
+                className={`flex-1 min-w-[60px] py-[1.2dvh] sm:py-3 px-1 rounded-xl border text-[10px] sm:text-[11px] font-bold transition-all duration-200 ${
+                  selectionMode === "gram"
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
+                }`}
+              >
+                <span className="truncate">Gram</span>
+              </button>
+              {units.map((unit, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setServing(option.grams);
-                    setSelectionMode(option.mode);
+                    setServing(Number(unit.grams));
+                    setSelectionMode("unit");
+                    setActiveUnit(unit);
                     setIsAdded(false);
                   }}
-                  className={`flex-1 py-[1.5dvh] sm:py-3 px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
-                    selectionMode === option.mode
+                  className={`flex-1 min-w-[60px] py-[1.2dvh] sm:py-3 px-1 rounded-xl border text-[10px] sm:text-[11px] font-bold transition-all duration-200 ${
+                    selectionMode === "unit" && activeUnit?.name === unit.name
                       ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
                       : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                   }`}
                 >
-                  {option.label}
+                  <span className="truncate">
+                    {unit.name.charAt(0).toUpperCase() + unit.name.slice(1)}
+                  </span>
                 </button>
               ))}
             </div>

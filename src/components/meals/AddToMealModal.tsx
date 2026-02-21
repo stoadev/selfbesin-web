@@ -150,15 +150,34 @@ export default function AddToMealModal({
               <span className="text-red-500 font-bold">
                 {Math.round(food.calories_per_100g * (grams / 100))} kcal
               </span>
-              {food.serving_unit_name && food.serving_unit_grams && (
-                <span className="ml-1 text-[10px] font-bold text-gray-400">
-                  (
-                  {(grams / food.serving_unit_grams)
+              {(() => {
+                const units =
+                  food.serving_units && food.serving_units.length > 0
+                    ? food.serving_units
+                    : food.serving_unit_name && food.serving_unit_grams
+                      ? [
+                          {
+                            name: food.serving_unit_name,
+                            grams: food.serving_unit_grams,
+                          },
+                        ]
+                      : [];
+
+                const matchingUnit = units.find(
+                  (u) => grams % u.grams === 0 || u.grams % grams === 0,
+                );
+                if (matchingUnit && matchingUnit.grams > 0) {
+                  const count = (grams / matchingUnit.grams)
                     .toFixed(1)
-                    .replace(".0", "")}{" "}
-                  {food.serving_unit_name})
-                </span>
-              )}
+                    .replace(".0", "");
+                  return (
+                    <span className="ml-1 text-[10px] font-bold text-gray-400">
+                      ({count} {matchingUnit.name})
+                    </span>
+                  );
+                }
+                return null;
+              })()}
             </p>
           </div>
         </div>

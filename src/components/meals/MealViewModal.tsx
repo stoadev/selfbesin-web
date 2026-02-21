@@ -75,7 +75,21 @@ export default function MealViewModal({
                   <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-gray-500 dark:text-gray-400">
                     <span>
                       {(() => {
-                        const units = mf.food?.serving_units || [];
+                        // Geriye uyumluluk için birimleri hazırla
+                        const units =
+                          mf.food?.serving_units &&
+                          mf.food?.serving_units.length > 0
+                            ? mf.food.serving_units
+                            : mf.food?.serving_unit_name &&
+                                mf.food?.serving_unit_grams
+                              ? [
+                                  {
+                                    name: mf.food.serving_unit_name,
+                                    grams: mf.food.serving_unit_grams,
+                                  },
+                                ]
+                              : [];
+
                         const matchingUnit = units.find(
                           (u) =>
                             mf.grams % u.grams === 0 ||

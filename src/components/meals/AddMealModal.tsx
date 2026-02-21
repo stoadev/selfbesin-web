@@ -320,7 +320,20 @@ function AddMealModalContent({
                   <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-2 h-8">
                     <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
                       {(() => {
-                        const units = sf.food.serving_units || [];
+                        const units =
+                          sf.food.serving_units &&
+                          sf.food.serving_units.length > 0
+                            ? sf.food.serving_units
+                            : sf.food.serving_unit_name &&
+                                sf.food.serving_unit_grams
+                              ? [
+                                  {
+                                    name: sf.food.serving_unit_name,
+                                    grams: sf.food.serving_unit_grams,
+                                  },
+                                ]
+                              : [];
+
                         const matchingUnit = units.find(
                           (u) =>
                             sf.grams % u.grams === 0 ||
@@ -336,7 +349,20 @@ function AddMealModalContent({
                       })()}
                     </span>
                     {(() => {
-                      const units = sf.food.serving_units || [];
+                      const units =
+                        sf.food.serving_units &&
+                        sf.food.serving_units.length > 0
+                          ? sf.food.serving_units
+                          : sf.food.serving_unit_name &&
+                              sf.food.serving_unit_grams
+                            ? [
+                                {
+                                  name: sf.food.serving_unit_name,
+                                  grams: sf.food.serving_unit_grams,
+                                },
+                              ]
+                            : [];
+
                       const hasUnit = units.some(
                         (u) =>
                           sf.grams % u.grams === 0 || u.grams % sf.grams === 0,

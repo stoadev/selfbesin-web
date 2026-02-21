@@ -22,23 +22,49 @@ export default function FoodAmountSelectionModal({
   onDelete,
 }: FoodAmountSelectionModalProps) {
   const [serving, setServing] = useState(initialGrams);
-  const [selectionMode, setSelectionMode] = useState<"gram" | "unit">("gram");
+
+  // Birimleri hazırla
+  const units =
+    food?.serving_units && food.serving_units.length > 0
+      ? food.serving_units
+      : food?.serving_unit_name && food.serving_unit_grams
+        ? [
+            {
+              name: food.serving_unit_name,
+              grams: Number(food.serving_unit_grams),
+            },
+          ]
+        : [];
+
+  // Önce tam eşleşen (initialGrams) veya 100 gram olan bir birim var mı diye bak
+  const matchingUnit =
+    units.find((u) => Number(u.grams) === initialGrams) ||
+    units.find((u) => Number(u.grams) === 100);
+
+  const [selectionMode, setSelectionMode] = useState<"gram" | "unit">(
+    matchingUnit ? "unit" : initialGrams !== 100 ? "unit" : "gram",
+  );
+
+  const [activeUnit, setActiveUnit] = useState<{
+    name: string;
+    grams: number;
+  } | null>(matchingUnit || (units.length > 0 ? units[0] : null));
 
   if (!food) return null;
 
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
-  // İlk birimi veya varsayılanı al
-  const units = food.serving_units || [];
-  const firstUnit = units.length > 0 ? units[0] : null;
-
   // Slider değerleri
   const sliderMin = 0;
   const sliderMax = selectionMode === "gram" ? 500 : 10;
   const sliderStep = selectionMode === "gram" ? 5 : 1;
   const sliderValue =
-    selectionMode === "gram" ? serving : serving / (firstUnit?.grams || 1);
+    selectionMode === "gram"
+      ? serving
+      : activeUnit
+        ? serving / activeUnit.grams
+        : serving;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-[440px]">
@@ -57,17 +83,18 @@ export default function FoodAmountSelectionModal({
         <div className="flex flex-col gap-[2dvh] p-[2dvh] rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between px-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              {selectionMode === "unit" && food.serving_unit_name
-                ? `${food.serving_unit_name.charAt(0).toUpperCase() + food.serving_unit_name.slice(1)}`
+              {selectionMode === "unit" && activeUnit
+                ? activeUnit.name.charAt(0).toUpperCase() +
+                  activeUnit.name.slice(1)
                 : "Ağırlık (gram)"}
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
-                {selectionMode === "unit" && firstUnit
-                  ? (serving / firstUnit.grams).toFixed(1).replace(".0", "")
+                {selectionMode === "unit" && activeUnit
+                  ? (serving / activeUnit.grams).toFixed(1).replace(".0", "")
                   : `${serving}g`}
               </span>
-              {selectionMode === "unit" && firstUnit && (
+              {selectionMode === "unit" && activeUnit && (
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-1">
                   ({serving}g)
                 </span>
@@ -85,8 +112,8 @@ export default function FoodAmountSelectionModal({
                 const val = Number(e.target.value);
                 if (selectionMode === "gram") {
                   setServing(val);
-                } else if (food.serving_unit_grams) {
-                  setServing(val * food.serving_unit_grams);
+                } else if (activeUnit) {
+                  setServing(val * activeUnit.grams);
                 }
               }}
               className="flex-1 accent-emerald-600 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
@@ -109,13 +136,13 @@ export default function FoodAmountSelectionModal({
                   setServing(100);
                   setSelectionMode("gram");
                 }}
-                className={`flex-1 min-w-[65px] py-[1.2dvh] px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
+                className={`flex-1 min-w-[55px] py-[1.2dvh] px-1 rounded-xl border text-[10px] sm:text-[11px] font-bold transition-all duration-200 ${
                   selectionMode === "gram"
                     ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
                     : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                 }`}
               >
-                Gram
+                <span className="truncate">Gram</span>
               </button>
               {units.map((unit, idx) => (
                 <button
@@ -126,14 +153,17 @@ export default function FoodAmountSelectionModal({
                     e.stopPropagation();
                     setServing(Number(unit.grams));
                     setSelectionMode("unit");
+                    setActiveUnit(unit);
                   }}
-                  className={`flex-1 min-w-[65px] py-[1.2dvh] px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
-                    selectionMode === "unit" && serving === Number(unit.grams)
+                  className={`flex-1 min-w-[55px] py-[1.2dvh] px-1 rounded-xl border text-[10px] sm:text-[11px] font-bold transition-all duration-200 ${
+                    selectionMode === "unit" && activeUnit?.name === unit.name
                       ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
                       : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                   }`}
                 >
-                  {unit.name.charAt(0).toUpperCase() + unit.name.slice(1)}
+                  <span className="truncate">
+                    {unit.name.charAt(0).toUpperCase() + unit.name.slice(1)}
+                  </span>
                 </button>
               ))}
             </div>
