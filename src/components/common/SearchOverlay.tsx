@@ -69,8 +69,8 @@ export default function SearchOverlay({
 
   return (
     <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 flex flex-col">
-      {/* Üst bar: input + iptal */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+      {/* Üst bar: input + iptal - Global bar yüksekliği */}
+      <div className="h-bar flex items-center gap-3 px-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
         <div className="flex-1 flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2">
           <Search className="w-4 h-4 text-gray-400 shrink-0" />
           <input
@@ -124,7 +124,7 @@ export default function SearchOverlay({
               <li key={food.id}>
                 <button
                   onClick={() => handleSelect(food)}
-                  className="w-full flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 transition-colors text-left gap-3"
+                  className="w-full flex items-center justify-between px-4 py-[1.5dvh] border-b border-gray-50 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 transition-colors text-left gap-3"
                 >
                   <div className="flex items-center gap-3 flex-1 px-1">
                     {/* Görsel Kutusu */}
@@ -144,7 +144,7 @@ export default function SearchOverlay({
                       <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
                         {food.name}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-gray-400">
                         {food.calories_per_100g} kcal · 100g
                       </p>
                     </div>

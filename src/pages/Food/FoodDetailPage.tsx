@@ -47,7 +47,7 @@ export default function FoodDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-[10dvh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
       </div>
     );
@@ -55,7 +55,7 @@ export default function FoodDetailPage() {
 
   if (!food) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20 px-6 text-center">
+      <div className="flex flex-col items-center justify-center gap-[2dvh] py-[10dvh] px-[3dvw] text-center">
         <p className="text-lg font-semibold text-gray-900 dark:text-white">
           Besin bulunamadı.
         </p>
@@ -85,24 +85,26 @@ export default function FoodDetailPage() {
         : 1;
 
   return (
-    <>
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-30">
+    <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+      {/* Header - %10 dikey alan */}
+      <div className="h-bar relative flex items-center justify-center px-[2dvw] border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-30 shrink-0">
         <Link
           to="/"
-          className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
+          className="absolute left-[2dvw] p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex-shrink-0"
         >
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </Link>
-        <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+        <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
           {food.name}
         </h1>
       </div>
 
-      <div className="w-full max-w-lg mx-auto px-5 py-6 flex flex-col gap-4 pb-10">
-        {/* Daraltılmış ve kompakt Hero Görsel Kartı - Sadece ekran yüksekliği yeterliyse gösterilir */}
+      {/* Ana İçerik Alanı - Esnek Alan */}
+      <div className="flex-1 flex flex-col px-5 py-[3dvh] overflow-y-auto">
+        {/* Hero Görsel Kartı */}
         <div
           onClick={() => food.image_url && setIsZoomed(true)}
-          className={`show-on-tall w-[100%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden items-center justify-center relative ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
+          className={`w-full mx-auto h-[30dvh] rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative shrink-0 ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
         >
           {food.image_url ? (
             <img
@@ -118,42 +120,13 @@ export default function FoodDetailPage() {
               </span>
             </div>
           )}
-
-          {/* Dekoratif Gradyan Overlay (Sadece Resim Varsa) */}
           {food.image_url && (
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60" />
           )}
         </div>
 
-        {/* Görsel Zoom Lightbox (Portal alternatifi inline overlay) */}
-        {isZoomed && food.image_url && (
-          <div
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
-            onClick={() => setIsZoomed(false)}
-          >
-            <button
-              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-[110]"
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsZoomed(false);
-              }}
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <div
-              className="w-full h-full p-4 flex items-center justify-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={food.image_url}
-                alt={food.name}
-                className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-300"
-              />
-            </div>
-          </div>
-        )}
-        {/* Porsiyon seçici */}
-        <div className="flex flex-col gap-4">
+        {/* Porsiyon seçici - %25 civarı pay */}
+        <div className="mt-auto flex flex-col gap-[2dvh]">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
               {selectionMode === "unit" && food.serving_unit_name
@@ -175,7 +148,9 @@ export default function FoodDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-col gap-4">
+
+          {/* Slider ve Butonlar - Slider altındaki gap 1.5x */}
+          <div className="flex flex-col gap-[4.5dvh]">
             <input
               type="range"
               min={sliderMin}
@@ -191,7 +166,7 @@ export default function FoodDetailPage() {
                 }
                 setIsAdded(false);
               }}
-              className="flex-1 accent-emerald-600 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              className="w-full accent-emerald-600 h-[1dvh] bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
               style={{
                 background: `linear-gradient(to right, #10b981 0%, #10b981 ${
                   ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
@@ -202,7 +177,7 @@ export default function FoodDetailPage() {
             />
 
             {/* Hızlı Birim Seçimi */}
-            <div className="flex gap-2">
+            <div className="flex gap-[1dvh]">
               {[
                 {
                   label: "Gram",
@@ -231,7 +206,7 @@ export default function FoodDetailPage() {
                     setSelectionMode(option.mode);
                     setIsAdded(false);
                   }}
-                  className={`flex-1 py-3 px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
+                  className={`flex-1 py-[1.5dvh] sm:py-3 px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
                     selectionMode === option.mode
                       ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
                       : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
@@ -244,8 +219,8 @@ export default function FoodDetailPage() {
           </div>
         </div>
 
-        {/* Makro kartları - Mobilde 2x2, PC'de 4x1 */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* Makro kartları - %25 pay */}
+        <div className="mt-auto grid grid-cols-2 gap-[1dvh] sm:gap-[3dvh]">
           <MacroCard
             icon={<Flame className="w-5 h-5 text-red-500" />}
             label="Kalori"
@@ -277,27 +252,31 @@ export default function FoodDetailPage() {
         </div>
       </div>
 
-      {/* Sabit Alt Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)]">
-        <div className="max-w-lg mx-auto px-5 py-4">
+      {/* Sabit Alt Bar - %10 pay */}
+      <div className="h-[calc(8dvh+env(safe-area-inset-bottom))] flex items-center bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shrink-0">
+        <div className="w-full max-w-lg mx-auto px-5">
           {user ? (
             <div className="flex gap-3">
               <Button
-                variant={isAdded ? "blueSecondary" : "blueCta"}
-                className="flex-1 h-12"
+                variant={isAdded ? "secondary" : "cta"}
+                className="flex-1 h-[6dvh] sm:h-[6dvh]"
                 onClick={() => setIsAddModalOpen(true)}
                 disabled={serving <= 0}
               >
-                {isAdded ? "Besin öğüne eklendi" : "Öğününe Ekle"}
+                {isAdded ? "Öğüne Eklendi!" : "Öğününe Ekle"}
               </Button>
-              <Button variant="cta" className="flex-1 h-12" to="/meals">
+              <Button
+                variant={isAdded ? "cta" : "secondary"}
+                className="flex-1 h-[6dvh] sm:h-[6dvh]"
+                to="/meals"
+              >
                 Öğünlerime Dön
               </Button>
             </div>
           ) : (
             <Button
               variant="primary"
-              className="w-full h-12"
+              className="w-full h-[8dvh] sm:h-[6dvh]"
               onClick={() => setIsAuthModalOpen(true)}
               disabled={serving <= 0}
             >
@@ -306,6 +285,34 @@ export default function FoodDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Görsel Zoom Lightbox (Portal alternatifi inline overlay) */}
+      {isZoomed && food.image_url && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setIsZoomed(false)}
+        >
+          <button
+            className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-[110]"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsZoomed(false);
+            }}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <div
+            className="w-full h-full p-4 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={food.image_url}
+              alt={food.name}
+              className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-300"
+            />
+          </div>
+        </div>
+      )}
 
       <AuthModal
         isOpen={isAuthModalOpen}
@@ -321,11 +328,10 @@ export default function FoodDetailPage() {
           grams={serving}
         />
       )}
-    </>
+    </div>
   );
 }
 
-// Küçük yardımcı bileşen
 function MacroCard({
   icon,
   label,
@@ -340,16 +346,20 @@ function MacroCard({
   bg: string;
 }) {
   return (
-    <div className={`${bg} rounded-2xl p-4 flex flex-col gap-2`}>
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+    <div
+      className={`${bg} rounded-xl p-[2dvh] flex flex-col gap-[0.5dvh] shrink-0`}
+    >
+      <div className="flex items-center gap-[1dvh]">
+        <div className="shrink-0 scale-90 sm:scale-100">{icon}</div>
+        <span className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 truncate">
           {label}
         </span>
       </div>
-      <p className="text-xl font-bold text-gray-900 dark:text-white">
+      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
         {value}
-        <span className="text-sm font-normal text-gray-400 ml-1">{unit}</span>
+        <span className="text-xs sm:text-sm font-normal text-gray-400 ml-1">
+          {unit}
+        </span>
       </p>
     </div>
   );

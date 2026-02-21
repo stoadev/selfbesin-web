@@ -143,23 +143,23 @@ export default function HeroSection() {
         onRemoveRecent={removeSearch}
         onAddSearch={addSearch}
       />
-      <section className="flex-1 flex items-center justify-center px-4 sm:px-6">
-        <div className="w-full max-w-3xl mx-auto py-10 sm:py-20 flex flex-col items-center text-center gap-6 sm:gap-10 -mt-32 sm:-mt-20">
+      <section className="flex-1 flex flex-col items-center justify-center px-[3dvw] sm:px-6">
+        <div className="w-full max-w-3xl mx-auto py-[4dvh] flex flex-col items-center text-center gap-[6dvh]">
           {/* Başlık */}
-          <div className="flex flex-col gap-4">
-            <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">
+          <div className="flex flex-col gap-[1.5dvh]">
+            <h1 className="text-3xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">
               Bugün hangi <br className="sm:hidden" />
               <span className="text-emerald-600">besini</span> arıyorsun?
             </h1>
-            <p className="hidden sm:block text-sm sm:text-lg text-gray-500 dark:text-gray-400 font-semibold px-2">
-              Yediklerini takip et, makrolarını gör, sağlıklı yaşama adım at.
+            <p className="text-xs sm:text-lg text-gray-500 dark:text-gray-400 px-[1dvw]">
+              Merak ettiğin besini ara, öğününe ekle.
             </p>
           </div>
 
           {/* Arama Kutusu + Dropdown */}
           <div className="w-full relative">
             <div
-              className={`flex items-center gap-2 sm:gap-3 bg-white dark:bg-gray-800 border rounded-full shadow-lg px-4 py-3 sm:px-5 sm:py-4 transition-all duration-300 ${
+              className={`flex items-center gap-[2dvw] sm:gap-[1dvw] bg-white dark:bg-gray-800 border rounded-full shadow-lg px-[4dvw] py-[1.8dvh] sm:px-5 sm:py-4 transition-all duration-300 ${
                 isDropdownOpen
                   ? "border-emerald-400 ring-2 ring-emerald-100 dark:ring-emerald-900/20 dark:border-emerald-500"
                   : "border-gray-200 dark:border-gray-800"

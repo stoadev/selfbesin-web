@@ -1,3 +1,8 @@
+export interface FoodUnit {
+  name: string;
+  grams: number;
+}
+
 export interface Food {
   id: string;
   name: string;
@@ -8,6 +13,7 @@ export interface Food {
   fat_g_per_100g: number;
   serving_unit_name?: string;
   serving_unit_grams?: number;
+  serving_units: FoodUnit[];
   image_url?: string;
   created_at?: string;
 }

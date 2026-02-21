@@ -52,20 +52,20 @@ export default function ConfirmModal({
       maxWidth="max-w-[400px]"
       showCloseButton={false}
     >
-      <div className="p-6 text-center">
+      <div className="p-[3dvh] text-center">
         <div
-          className={`w-16 h-16 ${style.iconBg} ${style.iconColor} rounded-2xl flex items-center justify-center mx-auto mb-4`}
+          className={`w-16 h-16 ${style.iconBg} ${style.iconColor} rounded-2xl flex items-center justify-center mx-auto mb-[2dvh]`}
         >
           <AlertTriangle className="w-8 h-8" />
         </div>
 
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-[1dvh]">
           {title}
         </h3>
 
-        <p className="text-gray-500 dark:text-gray-400 mb-8">{message}</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-[4dvh]">{message}</p>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-[1.5dvw]">
           <Button
             variant="ghost"
             className="flex-1 order-2 sm:order-1"

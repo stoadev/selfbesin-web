@@ -261,15 +261,15 @@ export default function MealsPage() {
 
   return (
     <>
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-1 pt-2 sm:pt-4 h-full flex flex-col overflow-hidden">
-        <header className="mb-2 shrink-0">
-          <div className="flex items-center justify-between mb-2">
+      <div className="w-full max-w-4xl mx-auto px-[3dvw] sm:px-6 lg:px-8 h-full flex flex-col overflow-hidden py-[2dvh]">
+        <header className="mb-[2dvh] shrink-0">
+          <div className="flex items-center justify-between mb-[1dvh]">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
               Öğün Seç
             </h1>
             <Button
               variant="cta"
-              className="h-9 px-3 flex items-center justify-center whitespace-nowrap"
+              className="h-[5dvh] min-h-[36px] px-3 flex items-center justify-center whitespace-nowrap"
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -283,8 +283,8 @@ export default function MealsPage() {
 
         {/* Günlük Toplam Özet (Daha Kompakt) */}
         {meals.length > 0 && (
-          <div className="mb-4 grid grid-cols-4 gap-2 sm:gap-3 bg-white dark:bg-gray-900 p-2 sm:p-3 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
-            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100/30 dark:border-red-900/10">
+          <div className="mb-[3dvh] grid grid-cols-4 gap-[2dvw] sm:gap-3 bg-white dark:bg-gray-900 p-[1.5dvh] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
+            <div className="flex flex-col items-center justify-center py-[0.8dvh] rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100/30 dark:border-red-900/10">
               <div className="flex items-center gap-1 mb-0.5">
                 <Flame className="w-2.5 h-2.5 text-red-500" />
                 <span className="text-[7px] font-black uppercase tracking-tight text-red-400">
@@ -347,9 +347,9 @@ export default function MealsPage() {
             </p>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 relative mb-12 sm:mb-16">
-            <div className="absolute inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-2 sm:p-4 bg-gray-50/30 dark:bg-gray-900/10 shadow-inner">
-              <div className="space-y-4">
+          <div className="flex-1 min-h-0 relative mb-[1dvh]">
+            <div className="h-[50dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
+              <div className="space-y-[1dvh]">
                 {meals.map((meal) => (
                   <SwipeableItem
                     key={meal.id}
@@ -384,26 +384,22 @@ export default function MealsPage() {
                         className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/30"
                         onClick={() => handleMealClick(meal)}
                       >
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
-                            <Utensils className="w-5 h-5" />
-                          </div>
+                        <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] min-w-0">
                           <div className="min-w-0">
                             <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight truncate">
                               {meal.name}
                             </h3>
-                            <div className="flex items-center gap-2 text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                            <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] text-[10px] text-gray-400 dark:text-gray-500">
                               <Calendar className="w-3 h-3" />
                               {new Date(meal.created_at).toLocaleDateString(
                                 "tr-TR",
-                                { hour: "2-digit", minute: "2-digit" },
                               )}
                             </div>
                           </div>
                         </div>
 
-                        <div className="shrink-0">
-                          <div className="flex items-center bg-gray-50/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-1 sm:py-1.5 gap-2 sm:gap-3">
+                        <div className="w-[25dvh] shrink-0">
+                          <div className="flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-700 px-[1.5dvh] sm:px-3 py-[0.5dvh] sm:py-1.5 h-full">
                             <div className="flex flex-col items-center">
                               <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
                                 Kcal
@@ -420,7 +416,7 @@ export default function MealsPage() {
                             <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
                             <div className="flex flex-col items-center">
                               <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                P
+                                Prot
                               </span>
                               <span className="text-[10px] sm:text-xs font-bold text-blue-500">
                                 {Math.round(
@@ -434,7 +430,7 @@ export default function MealsPage() {
                             <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
                             <div className="flex flex-col items-center">
                               <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                K
+                                Karb
                               </span>
                               <span className="text-[10px] sm:text-xs font-bold text-yellow-500">
                                 {Math.round(
@@ -448,7 +444,7 @@ export default function MealsPage() {
                             <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
                             <div className="flex flex-col items-center">
                               <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                Y
+                                Yağ
                               </span>
                               <span className="text-[10px] sm:text-xs font-bold text-orange-500">
                                 {Math.round(

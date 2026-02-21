@@ -23,18 +23,20 @@ export default function PageLayout({
   return (
     <div
       className={`${
-        isMealsPage ? "h-[100dvh]" : "min-h-[100dvh]"
-      } grid grid-rows-[auto_1fr_auto] bg-white bg-gradient-to-b dark:from-gray-900 dark:to-gray-950 overflow-hidden`}
+        isMealsPage || isDetailsPage ? "h-[100dvh]" : "min-h-[100dvh]"
+      } ${
+        isDetailsPage ? "flex flex-col" : "grid grid-rows-[auto_1fr_auto]"
+      } bg-white bg-gradient-to-b dark:from-gray-900 dark:to-gray-950 overflow-hidden`}
     >
-      <Navbar />
+      {!isDetailsPage && <Navbar />}
       <main
         className={`flex flex-col w-full h-full ${
-          isMealsPage ? "overflow-hidden" : ""
+          isMealsPage || isDetailsPage ? "overflow-hidden" : ""
         } ${className}`}
       >
         <Outlet />
       </main>
-      {showFooter && <Footer />}
+      {showFooter && !isDetailsPage && <Footer />}
 
       {user && !isDetailsPage && (
         <Button

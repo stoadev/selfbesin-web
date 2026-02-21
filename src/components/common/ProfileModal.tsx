@@ -109,12 +109,12 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Profile Header (Visual) */}
-      <div className="h-24 bg-gradient-to-r from-emerald-500 to-teal-600 shrink-0"></div>
+      <div className="h-[12dvh] min-h-[80px] bg-gradient-to-r from-emerald-500 to-teal-600 shrink-0"></div>
 
-      <div className="px-6 sm:px-10 pb-8 flex flex-col items-center">
+      <div className="px-[3dvw] sm:px-10 pb-[4dvh] flex flex-col items-center">
         {/* Avatar */}
-        <div className="-mt-12 mb-4 relative group">
-          <div className="h-24 w-24 rounded-full ring-4 ring-white dark:ring-gray-950 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-xl">
+        <div className="-mt-[6dvh] mb-[2dvh] relative group">
+          <div className="h-[12dvh] w-[12dvh] min-h-[80px] min-w-[80px] rounded-full ring-4 ring-white dark:ring-gray-950 bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-xl">
             {avatarUrl ? (
               <img
                 src={avatarUrl}
@@ -131,7 +131,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* User Info */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-[4dvh]">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
             {profile?.full_name || user?.email?.split("@")[0]}
           </h2>
@@ -141,8 +141,8 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Details List */}
-        <div className="w-full space-y-3 mb-8">
-          <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
+        <div className="w-full space-y-[1.5dvh] mb-[4dvh]">
+          <div className="flex items-center gap-[2dvw] p-[2dvh] rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
             <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
               <Mail className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -156,7 +156,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
+          <div className="flex items-center gap-[2dvw] p-[2dvh] rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
             <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
               <Calendar className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -181,7 +181,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
         <div className="w-full flex gap-3">
           <Button
             variant="redSecondary"
-            className="flex-1 h-12 flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-500 border border-red-500 whitespace-nowrap"
+            className="flex-1 h-[6dvh] min-h-[44px] flex items-center justify-center text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 dark:text-red-500 border border-red-500 whitespace-nowrap"
             onClick={handleSignOut}
           >
             <LogOut className="w-4 h-4 mr-2 shrink-0" />
@@ -189,7 +189,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
           </Button>
           <Button
             variant="secondary"
-            className="flex-1 h-12 flex items-center justify-center whitespace-nowrap"
+            className="flex-1 h-[6dvh] min-h-[44px] flex items-center justify-center whitespace-nowrap"
           >
             <Edit2 className="w-4 h-4 mr-2 shrink-0" />
             Düzenle

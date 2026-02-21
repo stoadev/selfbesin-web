@@ -35,12 +35,12 @@ export default function MealViewModal({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth="max-w-[480px]"
-      maxHeight="h-[80vh] sm:h-[600px]"
+      maxHeight="h-[80dvh] sm:h-[600px]"
       showCloseButton={true}
     >
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div className="p-[3dvh] border-b border-gray-100 dark:border-gray-800 shrink-0">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Utensils className="w-5 h-5 text-emerald-500" />
             {meal.name}
@@ -48,7 +48,7 @@ export default function MealViewModal({
         </div>
 
         {/* Food List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 pb-4">
+        <div className="flex-1 overflow-y-auto p-[2dvh] sm:p-6 space-y-[1dvh] pb-[2dvh]">
           {meal.meal_foods.map((mf) => (
             <div
               key={mf.id}
@@ -56,7 +56,7 @@ export default function MealViewModal({
               className="flex flex-col cursor-pointer group scale-[0.98] hover:scale-100 transition-all"
             >
               {/* Top Piece: Name and Amount */}
-              <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-t-xl border border-gray-100 dark:border-gray-700">
+              <div className="flex items-center gap-[1.5dvw] p-[1.5dvw] bg-white dark:bg-gray-800 rounded-t-xl border border-gray-100 dark:border-gray-700">
                 <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/30 transition-colors">
                   {mf.food?.image_url ? (
                     <img
@@ -73,13 +73,29 @@ export default function MealViewModal({
                     {mf.food?.name || "Bilinmeyen Besin"}
                   </h4>
                   <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-gray-500 dark:text-gray-400">
-                    <span>{mf.grams}g</span>
+                    <span>
+                      {(() => {
+                        const units = mf.food?.serving_units || [];
+                        const matchingUnit = units.find(
+                          (u) =>
+                            mf.grams % u.grams === 0 ||
+                            u.grams % mf.grams === 0,
+                        );
+                        if (matchingUnit && matchingUnit.grams > 0) {
+                          const count = (mf.grams / matchingUnit.grams)
+                            .toFixed(1)
+                            .replace(".0", "");
+                          return `${count} ${matchingUnit.name} (${mf.grams}g)`;
+                        }
+                        return `${mf.grams}g`;
+                      })()}
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Bottom Piece: Joined Macro Bar */}
-              <div className="grid grid-cols-4 bg-gray-50/80 dark:bg-gray-900/40 rounded-b-xl border-x border-b border-gray-100 dark:border-gray-700 py-1.5">
+              <div className="grid grid-cols-4 bg-gray-50/80 dark:bg-gray-900/40 rounded-b-xl border-x border-b border-gray-100 dark:border-gray-700 py-[0.8dvh]">
                 <div className="flex flex-col items-center justify-center border-r border-gray-200/50 dark:border-gray-800/50">
                   <span className="block text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tight leading-none mb-0.5">
                     Kalori
@@ -118,7 +134,7 @@ export default function MealViewModal({
         </div>
 
         {/* Macro Summary Footer */}
-        <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 shrink-0">
+        <div className="p-[2dvh] sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 shrink-0">
           <div className="flex items-center gap-4">
             <div className="flex-1 grid grid-cols-4 gap-1 text-center">
               <div>

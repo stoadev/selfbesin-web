@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Flame, Beef, Wheat, Droplets } from "lucide-react";
 import Modal from "../common/Modal";
 import type { Food } from "../../types";
@@ -29,18 +29,20 @@ export default function FoodAmountSelectionModal({
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
+  // İlk birimi veya varsayılanı al
+  const units = food.serving_units || [];
+  const firstUnit = units.length > 0 ? units[0] : null;
+
   // Slider değerleri
   const sliderMin = 0;
   const sliderMax = selectionMode === "gram" ? 500 : 10;
   const sliderStep = selectionMode === "gram" ? 5 : 1;
   const sliderValue =
-    selectionMode === "gram"
-      ? serving
-      : serving / (food.serving_unit_grams || 1);
+    selectionMode === "gram" ? serving : serving / (firstUnit?.grams || 1);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-[440px]">
-      <div className="p-6 flex flex-col gap-6">
+      <div className="p-[3dvh] flex flex-col gap-[3dvh]">
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
@@ -52,7 +54,7 @@ export default function FoodAmountSelectionModal({
         </div>
 
         {/* Serving Selector */}
-        <div className="flex flex-col gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
+        <div className="flex flex-col gap-[2dvh] p-[2dvh] rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between px-1">
             <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
               {selectionMode === "unit" && food.serving_unit_name
@@ -61,13 +63,11 @@ export default function FoodAmountSelectionModal({
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
-                {selectionMode === "unit" && food.serving_unit_grams
-                  ? (serving / food.serving_unit_grams)
-                      .toFixed(1)
-                      .replace(".0", "")
+                {selectionMode === "unit" && firstUnit
+                  ? (serving / firstUnit.grams).toFixed(1).replace(".0", "")
                   : `${serving}g`}
               </span>
-              {selectionMode === "unit" && food.serving_unit_name && (
+              {selectionMode === "unit" && firstUnit && (
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-1">
                   ({serving}g)
                 </span>
@@ -100,41 +100,40 @@ export default function FoodAmountSelectionModal({
             />
 
             {/* Hızlı Birim Seçimi */}
-            <div className="flex gap-2">
-              {[
-                {
-                  label: "Gram",
-                  grams: 100,
-                  mode: "gram" as const,
-                },
-                ...(food.serving_unit_name && food.serving_unit_grams
-                  ? [
-                      {
-                        label:
-                          food.serving_unit_name.charAt(0).toUpperCase() +
-                          food.serving_unit_name.slice(1),
-                        grams: food.serving_unit_grams,
-                        mode: "unit" as const,
-                      },
-                    ]
-                  : []),
-              ].map((option, idx) => (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setServing(100);
+                  setSelectionMode("gram");
+                }}
+                className={`flex-1 min-w-[65px] py-[1.2dvh] px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
+                  selectionMode === "gram"
+                    ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                    : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
+                }`}
+              >
+                Gram
+              </button>
+              {units.map((unit, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    setServing(option.grams);
-                    setSelectionMode(option.mode);
+                    setServing(Number(unit.grams));
+                    setSelectionMode("unit");
                   }}
-                  className={`flex-1 py-3 px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
-                    selectionMode === option.mode
+                  className={`flex-1 min-w-[65px] py-[1.2dvh] px-1 rounded-xl border text-[11px] font-bold transition-all duration-200 ${
+                    selectionMode === "unit" && serving === Number(unit.grams)
                       ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400"
                       : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                   }`}
                 >
-                  {option.label}
+                  {unit.name.charAt(0).toUpperCase() + unit.name.slice(1)}
                 </button>
               ))}
             </div>
@@ -142,7 +141,7 @@ export default function FoodAmountSelectionModal({
         </div>
 
         {/* Macro Cards */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-[1.5dvh]">
           <MacroCard
             icon={<Flame className="w-4 h-4 text-red-500" />}
             label="Kalori"
@@ -174,7 +173,7 @@ export default function FoodAmountSelectionModal({
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-3 mt-2">
+        <div className="flex gap-[1.5dvw] mt-[1dvh]">
           <Button
             variant={initialGrams ? "redSecondary" : "ghost"}
             className="flex-1"
@@ -190,7 +189,7 @@ export default function FoodAmountSelectionModal({
           </Button>
           <Button
             variant="primary"
-            className="flex-[2] h-12 shadow-lg shadow-emerald-500/20"
+            className="flex-[2] h-[6dvh] min-h-[44px] shadow-lg shadow-emerald-500/20"
             disabled={serving <= 0}
             onClick={() => {
               onConfirm(serving);
@@ -220,7 +219,7 @@ function MacroCard({
 }) {
   return (
     <div
-      className={`p-3 rounded-2xl ${bg} border border-black/5 dark:border-white/5`}
+      className={`p-[1.5dvh] rounded-2xl ${bg} border border-black/5 dark:border-white/5`}
     >
       <div className="flex items-center gap-2 mb-1.5">
         {icon}

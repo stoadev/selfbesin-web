@@ -209,14 +209,14 @@ function AddMealModalContent({
       onSubmit={handleSubmit}
       className="flex-1 flex flex-col overflow-hidden"
     >
-      <div className="p-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
+      <div className="p-[3dvh] border-b border-gray-100 dark:border-gray-800 shrink-0">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Utensils className="w-5 h-5 text-emerald-500" />
           {mealToEdit ? "Öğünü Düzenle" : "Yeni Öğün Ekle"}
         </h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto p-[3dvh] flex flex-col gap-[3dvh]">
         {/* Meal Name */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
@@ -226,7 +226,7 @@ function AddMealModalContent({
             type="text"
             required
             placeholder="Örn: Sabah Kahvaltısı"
-            className="w-full h-12 px-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+            className="w-full h-[6dvh] min-h-[44px] px-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
             value={mealName}
             onChange={(e) => setMealName(e.target.value)}
           />
@@ -242,7 +242,7 @@ function AddMealModalContent({
             <input
               type="text"
               placeholder="Besin ara..."
-              className="w-full h-12 pl-12 pr-10 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+              className="w-full h-[6dvh] min-h-[44px] pl-12 pr-10 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -255,12 +255,12 @@ function AddMealModalContent({
 
           {/* Search Results Dropdown */}
           {searchResults.length > 0 && (
-            <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl max-h-60 overflow-y-auto">
+            <div className="absolute z-50 w-full mt-[1dvh] bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl max-h-[30dvh] overflow-y-auto">
               {searchResults.map((food) => (
                 <button
                   key={food.id}
                   type="button"
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800"
+                  className="w-full flex items-center justify-between p-[2dvh] px-[4dvw] hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800"
                   onClick={() => handleAddFood(food)}
                 >
                   <div className="flex items-center gap-3">
@@ -287,7 +287,7 @@ function AddMealModalContent({
               <div
                 key={sf.food.id}
                 onClick={() => handleAddFood(sf.food)} // Mevcut handleAddFood modalı açıyor
-                className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group"
+                className="flex items-center gap-4 p-[2dvh] rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 cursor-pointer hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors group"
               >
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
@@ -317,13 +317,36 @@ function AddMealModalContent({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-3 h-8">
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
-                      {sf.grams}
+                  <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-2 h-8">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      {(() => {
+                        const units = sf.food.serving_units || [];
+                        const matchingUnit = units.find(
+                          (u) =>
+                            sf.grams % u.grams === 0 ||
+                            u.grams % sf.grams === 0,
+                        );
+                        if (matchingUnit && matchingUnit.grams > 0) {
+                          const count = (sf.grams / matchingUnit.grams)
+                            .toFixed(1)
+                            .replace(".0", "");
+                          return `${count} ${matchingUnit.name}`;
+                        }
+                        return `${sf.grams}g`;
+                      })()}
                     </span>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-                      g
-                    </span>
+                    {(() => {
+                      const units = sf.food.serving_units || [];
+                      const hasUnit = units.some(
+                        (u) =>
+                          sf.grams % u.grams === 0 || u.grams % sf.grams === 0,
+                      );
+                      return hasUnit ? (
+                        <span className="text-[9px] font-bold text-gray-400 ml-1">
+                          ({sf.grams}g)
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                   <button
                     type="button"
@@ -339,7 +362,7 @@ function AddMealModalContent({
               </div>
             ))
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center py-10 sm:py-8 px-4 text-center bg-gray-50/50 dark:bg-gray-900/20 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+            <div className="flex-1 flex flex-col items-center justify-center py-[5dvh] px-[2dvw] text-center bg-gray-50/50 dark:bg-gray-900/20 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
               <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
                 Henüz besin eklenmedi
               </p>
@@ -352,8 +375,8 @@ function AddMealModalContent({
       </div>
 
       {/* Footer / Summary */}
-      <div className="p-4 sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 shrink-0">
-        <div className="grid grid-cols-4 gap-2 mb-4 sm:mb-6 text-center">
+      <div className="p-[2dvh] sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 shrink-0">
+        <div className="grid grid-cols-4 gap-[1dvw] mb-[2dvh] sm:mb-[3dvw] text-center">
           <div>
             <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-tight">
               Kalori
@@ -407,7 +430,7 @@ function AddMealModalContent({
           <Button
             type="submit"
             variant="primary"
-            className="flex-[2] h-12 flex items-center justify-center gap-2"
+            className="flex-[2] h-[6dvh] min-h-[44px] flex items-center justify-center gap-2"
             disabled={!mealName.trim() || isSubmitting}
             loading={isSubmitting}
           >

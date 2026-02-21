@@ -1,16 +1,6 @@
 @import "tailwindcss";
 @variant dark (&:where(.dark, .dark *));
 
-.show-on-tall {
-  display: none !important;
-}
-
-@media (min-height: 740px) {
-  .show-on-tall {
-    display: flex !important;
-  }
-}
-
 @theme {
   --color-gray-50: var(--color-neutral-50);
   --color-gray-100: var(--color-neutral-100);
@@ -28,6 +18,7 @@
   --z-index-max: 999;
 
   --spacing-nav: 64px;
+  --spacing-bar: 8dvh;
 }
 * {
   user-select: none;
