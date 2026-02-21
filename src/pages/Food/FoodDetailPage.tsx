@@ -99,10 +99,10 @@ export default function FoodDetailPage() {
       </div>
 
       <div className="w-full max-w-lg mx-auto px-5 py-6 flex flex-col gap-4 pb-10">
-        {/* Daraltılmış ve kompakt Hero Görsel Kartı */}
+        {/* Daraltılmış ve kompakt Hero Görsel Kartı - Sadece ekran yüksekliği yeterliyse gösterilir */}
         <div
           onClick={() => food.image_url && setIsZoomed(true)}
-          className={`w-[100%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
+          className={`show-on-tall w-[100%] mx-auto h-48 sm:h-56 rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden items-center justify-center relative ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
         >
           {food.image_url ? (
             <img
