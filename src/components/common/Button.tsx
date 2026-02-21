@@ -36,7 +36,7 @@ const variantClasses = {
   ghost:
     "bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800",
   redSecondary:
-    "bg-white text-red-600 border border-red-600 hover:bg-red-100 dark:bg-gray-900 dark:text-red-600 dark:border-red-600 dark:hover:bg-red-900",
+    "bg-white text-red-600 border border-red-600 hover:bg-red-100 dark:bg-gray-950 dark:text-red-600 dark:border-red-600 dark:hover:bg-red-900",
   bluePrimary:
     "bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-600 dark:text-white dark:hover:bg-blue-700",
   blueSecondary:

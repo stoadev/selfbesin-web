@@ -10,6 +10,7 @@ type FoodAmountSelectionModalProps = {
   onConfirm: (grams: number) => void;
   food: Food | null;
   initialGrams?: number;
+  onDelete?: () => void;
 };
 
 export default function FoodAmountSelectionModal({
@@ -18,6 +19,7 @@ export default function FoodAmountSelectionModal({
   onConfirm,
   food,
   initialGrams = 100,
+  onDelete,
 }: FoodAmountSelectionModalProps) {
   const [serving, setServing] = useState(initialGrams);
   const [selectionMode, setSelectionMode] = useState<"gram" | "unit">("gram");
@@ -173,8 +175,18 @@ export default function FoodAmountSelectionModal({
 
         {/* Buttons */}
         <div className="flex gap-3 mt-2">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
-            İptal
+          <Button
+            variant={initialGrams ? "redSecondary" : "ghost"}
+            className="flex-1"
+            onClick={() => {
+              if (initialGrams && onDelete) {
+                onDelete();
+              } else {
+                onClose();
+              }
+            }}
+          >
+            {initialGrams ? "Sil" : "İptal"}
           </Button>
           <Button
             variant="primary"

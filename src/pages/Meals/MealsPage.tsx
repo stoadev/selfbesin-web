@@ -18,6 +18,7 @@ import Button from "../../components/common/Button";
 import AddMealModal from "../../components/meals/AddMealModal";
 import MealViewModal from "../../components/meals/MealViewModal";
 import FoodAmountSelectionModal from "../../components/meals/FoodAmountSelectionModal";
+import ConfirmModal from "../../components/common/ConfirmModal";
 import type { MealWithFoods, Food, MealFood } from "../../types";
 
 export default function MealsPage() {
@@ -32,6 +33,21 @@ export default function MealsPage() {
   const [editingMealFoodId, setEditingMealFoodId] = useState<string | null>(
     null,
   );
+
+  // Custom Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isLoading: boolean;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    isLoading: false,
+  });
 
   const fetchMeals = useCallback(async () => {
     if (!user) return [];
@@ -133,17 +149,70 @@ export default function MealsPage() {
     }
   };
 
+  const handleDeleteMealFood = async () => {
+    if (!editingMealFoodId) return;
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Besini Sil",
+      message: "Bu besini öğünden silmek istediğine emin misin?",
+      isLoading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+        try {
+          const { error } = await supabase
+            .from("meal_foods")
+            .delete()
+            .eq("id", editingMealFoodId);
+
+          if (error) throw error;
+
+          const updatedMeals = await fetchMeals();
+
+          if (selectedMeal) {
+            const found = updatedMeals.find((m) => m.id === selectedMeal.id);
+            if (found) setSelectedMeal(found);
+          }
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error("Error deleting meal food:", error);
+          alert("Besin silinirken bir hata oluştu.");
+        } finally {
+          setEditingMealFoodId(null);
+          setFoodToEditAmount(null);
+          setConfirmModal((prev) => ({ ...prev, isLoading: false }));
+        }
+      },
+    });
+  };
+
   const handleDeleteMeal = async (mealId: string) => {
     if (!user) return;
-    try {
-      const { error } = await supabase.from("meals").delete().eq("id", mealId);
 
-      if (error) throw error;
-      await fetchMeals();
-    } catch (error) {
-      console.error("Error deleting meal:", error);
-      alert("Öğün silinirken bir hata oluştu.");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Öğünü Sil",
+      message: "Bu öğünü silmek istediğine emin misin?",
+      isLoading: false,
+      onConfirm: async () => {
+        setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+        try {
+          const { error } = await supabase
+            .from("meals")
+            .delete()
+            .eq("id", mealId);
+
+          if (error) throw error;
+          await fetchMeals();
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+        } catch (error) {
+          console.error("Error deleting meal:", error);
+          alert("Öğün silinirken bir hata oluştu.");
+        } finally {
+          setConfirmModal((prev) => ({ ...prev, isLoading: false }));
+        }
+      },
+    });
   };
 
   const handleDuplicateMeal = async (meal: MealWithFoods) => {
@@ -304,13 +373,7 @@ export default function MealsPage() {
                         label: "Sil",
                         icon: <Trash className="w-4 h-4" />,
                         onClick: () => {
-                          if (
-                            window.confirm(
-                              "Bu öğünü silmek istediğine emin misin?",
-                            )
-                          ) {
-                            handleDeleteMeal(meal.id);
-                          }
+                          handleDeleteMeal(meal.id);
                         },
                         color: "bg-red-500",
                       },
@@ -455,10 +518,20 @@ export default function MealsPage() {
         }}
         food={foodToEditAmount}
         onConfirm={handleUpdateMealFoodGrams}
+        onDelete={handleDeleteMealFood}
         initialGrams={
           selectedMeal?.meal_foods.find((mf) => mf.id === editingMealFoodId)
             ?.grams
         }
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        isLoading={confirmModal.isLoading}
       />
     </>
   );
