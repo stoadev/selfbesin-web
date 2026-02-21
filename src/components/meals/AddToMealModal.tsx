@@ -3,6 +3,7 @@ import { Utensils, Check, Save } from "lucide-react";
 import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
+import Loading from "../common/Loading";
 import type { Food, Meal } from "../../types";
 import Button from "../common/Button";
 
@@ -113,7 +114,7 @@ export default function AddToMealModal({
         if (insertError) throw insertError;
       }
 
-      onSuccess?.();
+      await onSuccess?.();
       onClose();
     } catch (error) {
       console.error("Error handling food to meal:", error);
@@ -125,6 +126,7 @@ export default function AddToMealModal({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} maxWidth="max-w-[400px]">
+      {isSubmitting && <Loading />}
       <div className="p-6 flex flex-col gap-6">
         {/* Header (Manüel) */}
         <div className="flex flex-col gap-1">

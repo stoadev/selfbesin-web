@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Plus,
   Utensils,
@@ -11,6 +11,7 @@ import {
   Copy,
   Trash,
 } from "lucide-react";
+import Loading from "../../components/common/Loading";
 import SwipeableItem from "../../components/common/SwipeableItem";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
@@ -27,6 +28,7 @@ export default function MealsPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isMutating, setIsMutating] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<MealWithFoods | null>(null);
   const [mealToEdit, setMealToEdit] = useState<MealWithFoods | null>(null);
   const [foodToEditAmount, setFoodToEditAmount] = useState<Food | null>(null);
@@ -49,61 +51,75 @@ export default function MealsPage() {
     isLoading: false,
   });
 
-  const fetchMeals = useCallback(async () => {
-    if (!user) return [];
-    setLoading(true);
+  const fetchMeals = useCallback(
+    async (showMainLoading = false) => {
+      if (!user) {
+        setLoading(false);
+        return [];
+      }
 
-    try {
-      const { data, error } = await supabase
-        .from("meals")
-        .select(
-          `
+      if (showMainLoading) setLoading(true);
+
+      try {
+        const { data, error } = await supabase
+          .from("meals")
+          .select(
+            `
           *,
           meal_foods (
             *,
             food:foods (*)
           )
         `,
-        )
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
+          )
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
 
-      if (error) throw error;
-      const fetchedMeals = data || [];
-      setMeals(fetchedMeals);
-      return fetchedMeals;
-    } catch (error) {
-      console.error("Error fetching meals:", error);
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const dailyTotals = meals.reduce(
-    (acc, meal) => {
-      const mealTotals = meal.meal_foods.reduce(
-        (mAcc, mf) => ({
-          calories: mAcc.calories + mf.calories,
-          protein: mAcc.protein + mf.protein,
-          carbs: mAcc.carbs + (mf.carbs || 0),
-          fat: mAcc.fat + mf.fat,
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 },
-      );
-      return {
-        calories: acc.calories + mealTotals.calories,
-        protein: acc.protein + mealTotals.protein,
-        carbs: acc.carbs + mealTotals.carbs,
-        fat: acc.fat + mealTotals.fat,
-      };
+        if (error) throw error;
+        const fetchedMeals = data || [];
+        setMeals(fetchedMeals);
+        return fetchedMeals;
+      } catch (error) {
+        console.error("Error fetching meals:", error);
+        return [];
+      } finally {
+        setLoading(false);
+      }
     },
-    { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    [user], // Stabilized
   );
 
+  const dailyTotals = useMemo(() => {
+    return meals.reduce(
+      (acc, meal) => {
+        const foods = meal.meal_foods || [];
+        const mealTotals = foods.reduce(
+          (mAcc, mf) => ({
+            calories: mAcc.calories + (mf.calories || 0),
+            protein: mAcc.protein + (mf.protein || 0),
+            carbs: mAcc.carbs + (mf.carbs || 0),
+            fat: mAcc.fat + (mf.fat || 0),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fat: 0 },
+        );
+        return {
+          calories: acc.calories + mealTotals.calories,
+          protein: acc.protein + mealTotals.protein,
+          carbs: acc.carbs + mealTotals.carbs,
+          fat: acc.fat + mealTotals.fat,
+        };
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    );
+  }, [meals]);
+
   useEffect(() => {
-    fetchMeals();
-  }, [fetchMeals]);
+    if (user?.id) {
+      fetchMeals(meals.length === 0);
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id, fetchMeals]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMealClick = (meal: MealWithFoods) => {
     setSelectedMeal(meal);
@@ -119,6 +135,7 @@ export default function MealsPage() {
   const handleUpdateMealFoodGrams = async (grams: number) => {
     if (!editingMealFoodId || !foodToEditAmount) return;
 
+    setIsMutating(true);
     try {
       const factor = grams / 100;
       const { error } = await supabase
@@ -144,6 +161,7 @@ export default function MealsPage() {
       console.error("Error updating food grams:", error);
       alert("Miktar güncellenirken bir hata oluştu.");
     } finally {
+      setIsMutating(false);
       setEditingMealFoodId(null);
       setFoodToEditAmount(null);
     }
@@ -217,6 +235,7 @@ export default function MealsPage() {
 
   const handleDuplicateMeal = async (meal: MealWithFoods) => {
     if (!user) return;
+    setIsMutating(true);
     try {
       const { data: newMeal, error: mealError } = await supabase
         .from("meals")
@@ -248,19 +267,18 @@ export default function MealsPage() {
     } catch (error) {
       console.error("Error duplicating meal:", error);
       alert("Öğün çoğaltılırken bir hata oluştu.");
+    } finally {
+      setIsMutating(false);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   return (
     <>
+      {isMutating && <Loading />}
       <div className="w-full max-w-4xl mx-auto px-[3dvw] sm:px-6 lg:px-8 h-full flex flex-col overflow-hidden py-[2dvh]">
         <header className="mb-[2dvh] shrink-0">
           <div className="flex items-center justify-between mb-[1dvh]">
@@ -508,7 +526,11 @@ export default function MealsPage() {
       />
 
       <FoodAmountSelectionModal
-        key={editingMealFoodId}
+        key={
+          foodToEditAmount
+            ? `${foodToEditAmount.id}-${editingMealFoodId || "new"}`
+            : "none"
+        }
         isOpen={!!foodToEditAmount}
         onClose={() => {
           setFoodToEditAmount(null);

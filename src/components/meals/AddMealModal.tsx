@@ -7,6 +7,7 @@ import { foodService } from "../../services/food.service";
 import type { Food, MealWithFoods } from "../../types";
 import Button from "../common/Button";
 import ConfirmModal from "../common/ConfirmModal";
+import Loading from "../common/Loading";
 import FoodAmountSelectionModal from "./FoodAmountSelectionModal";
 
 type SelectedFood = {
@@ -167,7 +168,7 @@ function AddMealModalContent({
         if (foodsError) throw foodsError;
       }
 
-      onSuccess();
+      await onSuccess();
       onClose();
     } catch (error) {
       console.error("Error saving meal:", error);
@@ -209,6 +210,7 @@ function AddMealModalContent({
       onSubmit={handleSubmit}
       className="flex-1 flex flex-col overflow-hidden"
     >
+      {isSubmitting && <Loading />}
       <div className="p-[3dvh] border-b border-gray-100 dark:border-gray-800 shrink-0">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Utensils className="w-5 h-5 text-emerald-500" />
@@ -248,7 +250,7 @@ function AddMealModalContent({
             />
             {isSearching && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-500 border-t-transparent"></div>
+                <Loading fullScreen={false} backdrop={false} className="p-0" />
               </div>
             )}
           </div>

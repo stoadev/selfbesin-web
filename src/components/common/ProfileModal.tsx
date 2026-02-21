@@ -3,6 +3,7 @@ import { User, Mail, Calendar, LogOut, Edit2 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../lib/supabase";
 import Button from "./Button";
+import Loading from "./Loading";
 import Modal from "./Modal";
 
 type ProfileModalProps = {
@@ -99,11 +100,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
   };
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center p-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    );
+    return <Loading fullScreen={false} />;
   }
 
   return (

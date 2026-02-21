@@ -14,6 +14,7 @@ import type { Food } from "../../types";
 import Button from "../../components/common/Button";
 import AuthModal from "../../components/common/AuthModal";
 import AddToMealModal from "../../components/meals/AddToMealModal";
+import Loading from "../../components/common/Loading";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function FoodDetailPage() {
@@ -78,11 +79,7 @@ export default function FoodDetailPage() {
   }, [slug]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-[10dvh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   if (!food) {

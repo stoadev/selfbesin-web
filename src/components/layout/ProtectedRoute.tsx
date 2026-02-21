@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import Loading from "../common/Loading";
 import { useAuth } from "../../hooks/useAuth";
 
 export default function ProtectedRoute() {
@@ -6,11 +7,7 @@ export default function ProtectedRoute() {
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-      </div>
-    );
+    return <Loading />;
   }
 
   if (!user) {

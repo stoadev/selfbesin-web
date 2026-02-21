@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+﻿import { useState, useMemo } from "react";
 import { Flame, Beef, Wheat, Droplets } from "lucide-react";
 import Modal from "../common/Modal";
 import type { Food } from "../../types";
@@ -18,23 +18,26 @@ export default function FoodAmountSelectionModal({
   onClose,
   onConfirm,
   food,
-  initialGrams = 100,
+  initialGrams,
   onDelete,
 }: FoodAmountSelectionModalProps) {
-  const [serving, setServing] = useState(initialGrams);
+  const [serving, setServing] = useState(initialGrams || 100);
 
   // Birimleri hazırla
-  const units =
-    food?.serving_units && food.serving_units.length > 0
-      ? food.serving_units
-      : food?.serving_unit_name && food.serving_unit_grams
-        ? [
-            {
-              name: food.serving_unit_name,
-              grams: Number(food.serving_unit_grams),
-            },
-          ]
-        : [];
+  const units = useMemo(
+    () =>
+      food?.serving_units && food.serving_units.length > 0
+        ? food.serving_units
+        : food?.serving_unit_name && food.serving_unit_grams
+          ? [
+              {
+                name: food.serving_unit_name,
+                grams: Number(food.serving_unit_grams),
+              },
+            ]
+          : [],
+    [food],
+  );
 
   // Önce tam eşleşen (initialGrams) veya 100 gram olan bir birim var mı diye bak
   const matchingUnit =
@@ -42,7 +45,7 @@ export default function FoodAmountSelectionModal({
     units.find((u) => Number(u.grams) === 100);
 
   const [selectionMode, setSelectionMode] = useState<"gram" | "unit">(
-    matchingUnit ? "unit" : initialGrams !== 100 ? "unit" : "gram",
+    matchingUnit || initialGrams ? "unit" : "gram",
   );
 
   const [activeUnit, setActiveUnit] = useState<{
@@ -203,9 +206,9 @@ export default function FoodAmountSelectionModal({
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-[1.5dvw] mt-[1dvh]">
+        <div className="flex gap-[3dvw] mt-[1dvh]">
           <Button
-            variant={initialGrams ? "redSecondary" : "ghost"}
+            variant={initialGrams ? "redSecondary" : "secondary"}
             className="flex-1"
             onClick={() => {
               if (initialGrams && onDelete) {
@@ -215,7 +218,7 @@ export default function FoodAmountSelectionModal({
               }
             }}
           >
-            {initialGrams ? "Sil" : "İptal"}
+            {initialGrams ? "Besini Sil" : "İptal"}
           </Button>
           <Button
             variant="primary"
