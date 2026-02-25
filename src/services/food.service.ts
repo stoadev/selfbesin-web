@@ -34,7 +34,13 @@ export const foodService = {
         limit: 20,
         attributesToSearchOn: ["name", "brand", "slug"],
       });
-      return result.hits;
+      return result.hits.sort((a, b) => {
+        const aIsGeneric = !a.brand || a.brand === "Genel";
+        const bIsGeneric = !b.brand || b.brand === "Genel";
+        if (aIsGeneric && !bIsGeneric) return -1;
+        if (!aIsGeneric && bIsGeneric) return 1;
+        return 0;
+      });
     } catch (err) {
       console.error("MeiliSearch search error:", err);
       return [];
