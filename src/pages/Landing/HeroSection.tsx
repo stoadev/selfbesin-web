@@ -1,12 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Search,
-  Lightbulb,
-  SendHorizontal,
-  ChevronRight,
-  Clock,
-  X,
-} from "lucide-react";
+import { Search, Lightbulb, SendHorizontal, Clock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
 import SearchOverlay from "../../components/common/SearchOverlay";
@@ -105,17 +98,19 @@ export default function HeroSection() {
   }
 
   function handleSearch() {
-    // Eğer sonuçlardan biri seçiliyse ona git
     if (results.length > 0) {
       const match = results[selectedIndex] ?? results[0];
       if (match) {
-        addSearch(match.name); // Aramayı kaydet
-        navigate(`/besin/${match.slug}`);
+        const searchTerm =
+          match.brand && match.brand !== "Genel"
+            ? `${match.brand} ${match.name}`
+            : match.name;
+        addSearch(searchTerm);
+        navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
       }
     } else if (query.trim()) {
-      // Sonuç yoksa ama query varsa (örn: enter'a bastı), belki ileride genel arama sayfasına gider
-      // Şimdilik sadece history'e ekleyelim
       addSearch(query.trim());
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   }
 
@@ -181,7 +176,8 @@ export default function HeroSection() {
             >
               <input
                 ref={searchInputRef}
-                type="text"
+                type="search"
+                enterKeyHint="search"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -352,11 +348,15 @@ function DesktopDropdown({
               <button
                 onMouseDown={() => {
                   onClose();
-                  onAddSearch(food.name);
-                  navigate(`/besin/${food.slug}`);
+                  const searchTerm =
+                    food.brand && food.brand !== "Genel"
+                      ? `${food.brand} ${food.name}`
+                      : food.name;
+                  onAddSearch(searchTerm);
+                  navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
                 }}
                 onMouseEnter={() => onHover(index)}
-                className={`w-full flex items-center justify-between px-5 py-3 transition-colors text-left ${
+                className={`w-full flex items-center gap-4 px-5 py-4 transition-colors text-left ${
                   index === selectedIndex
                     ? "bg-gray-50 dark:bg-gray-700"
                     : isKeyboardNav
@@ -364,18 +364,12 @@ function DesktopDropdown({
                       : "hover:bg-gray-50 dark:hover:bg-gray-700"
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Search className="w-4 h-4 text-gray-300 dark:text-gray-500 shrink-0" />
-                  <div>
-                    <p className="text-sm text-gray-800 dark:text-gray-100">
-                      {food.name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {food.calories_per_100g} kcal · 100g
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                <Search className="w-4 h-4 text-gray-300 dark:text-gray-500 shrink-0" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                  {food.brand && food.brand !== "Genel"
+                    ? `${food.brand} ${food.name}`
+                    : food.name}
+                </span>
               </button>
             </li>
           ))

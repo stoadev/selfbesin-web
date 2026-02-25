@@ -30,7 +30,10 @@ export const foodService = {
     }
 
     try {
-      const result = await index.search(q, { limit: 20 });
+      const result = await index.search(q, {
+        limit: 20,
+        attributesToSearchOn: ["name", "brand", "slug"],
+      });
       return result.hits;
     } catch (err) {
       console.error("MeiliSearch search error:", err);

@@ -1,5 +1,5 @@
 import { useRef, useEffect } from "react";
-import { Search, X, ChevronRight, Clock, Utensils } from "lucide-react";
+import { Search, X, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Food } from "../../types";
 
@@ -62,9 +62,12 @@ export default function SearchOverlay({
 
   function handleSelect(food: Food) {
     onClose();
-    // Aramayı History'e ekle
-    onAddSearch?.(food.name);
-    navigate(`/besin/${food.slug}`);
+    const searchTerm =
+      food.brand && food.brand !== "Genel"
+        ? `${food.brand} ${food.name}`
+        : food.name;
+    onAddSearch?.(searchTerm);
+    navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
   }
 
   return (
@@ -75,9 +78,17 @@ export default function SearchOverlay({
           <Search className="w-4 h-4 text-gray-400 shrink-0" />
           <input
             ref={inputRef}
-            type="text"
+            type="search"
+            enterKeyHint="search"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && query.trim()) {
+                onClose();
+                onAddSearch?.(query.trim());
+                navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+              }
+            }}
             placeholder="Besin ara..."
             className="flex-1 bg-transparent text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 outline-none"
           />
@@ -124,34 +135,14 @@ export default function SearchOverlay({
               <li key={food.id}>
                 <button
                   onClick={() => handleSelect(food)}
-                  className="w-full flex items-center justify-between px-4 py-[1.5dvh] border-b border-gray-50 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 transition-colors text-left gap-3"
+                  className="w-full flex items-center gap-4 px-5 py-4 border-b border-gray-50 dark:border-gray-800 active:bg-gray-50 dark:active:bg-gray-800 transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3 flex-1 px-1">
-                    {/* Görsel Kutusu */}
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/50 dark:border-emerald-500/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      {food.image_url ? (
-                        <img
-                          src={food.image_url}
-                          alt={food.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <Utensils className="w-5 h-5 text-emerald-500/50 dark:text-emerald-400/30" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                        {food.brand && food.brand !== "Genel"
-                          ? `${food.brand} ${food.name}`
-                          : food.name}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {food.calories_per_100g} kcal · 100g
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                  <Search className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                    {food.brand && food.brand !== "Genel"
+                      ? `${food.brand} ${food.name}`
+                      : food.name}
+                  </span>
                 </button>
               </li>
             ))}

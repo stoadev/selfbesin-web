@@ -13,7 +13,15 @@ const seed = async () => {
   const index = client.index("foods");
   await index.addDocuments(data ?? []);
   await index.updateSettings({
-    searchableAttributes: ["name"],
+    searchableAttributes: ["name", "brand", "slug"],
+    rankingRules: [
+      "words",
+      "typo",
+      "proximity",
+      "attribute",
+      "sort",
+      "exactness",
+    ],
     typoTolerance: {
       enabled: true,
       minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 },
