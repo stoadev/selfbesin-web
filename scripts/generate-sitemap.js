@@ -26,7 +26,7 @@ async function generateSitemap() {
   const baseUrl = "https://selfbesin.com";
 
   // Static pages
-  const staticPages = ["", "/search", "/meals", "/gizlilik-politikasi"];
+  const staticPages = ["", "/search", "/meals", "/privacy"];
 
   // Fetch all food slugs
   const { data: foods, error } = await supabase

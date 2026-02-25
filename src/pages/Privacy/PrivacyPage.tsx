@@ -11,7 +11,7 @@ export default function PrivacyPage() {
           name="description"
           content="Selfbesin gizlilik politikası. Kişisel verilerinizin nasıl işlendiğini öğrenin."
         />
-        <link rel="canonical" href="https://selfbesin.com/gizlilik-politikasi" />
+        <link rel="canonical" href="https://selfbesin.com/privacy" />
       </Helmet>
       <div className="max-w-3xl mx-auto">
         <Link

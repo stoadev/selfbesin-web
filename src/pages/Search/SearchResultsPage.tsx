@@ -83,6 +83,10 @@ export default function SearchResultsPage() {
               : "Binlerce besini ara, anında besin değerlerini öğren."
           }
         />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://selfbesin.com/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://selfbesin.com/og-image.png" />
         <meta name="robots" content="noindex, follow" />
         <link rel="canonical" href="https://selfbesin.com/search" />
       </Helmet>

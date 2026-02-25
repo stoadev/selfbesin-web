@@ -1,6 +1,8 @@
 {
   "name": "Selfbesin",
   "short_name": "Selfbesin",
+  "description": "Türkiye'nin en kapsamlı besin değerleri veritabanı. Kalori, protein, karbonhidrat ve yağ takibi.",
+  "start_url": "/",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +15,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#171717",
+  "theme_color": "#10b981",
   "background_color": "#171717",
   "display": "standalone"
 }

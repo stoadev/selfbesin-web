@@ -17,7 +17,7 @@ export default function AppRouter() {
         <Route path="/besin/:slug" element={<FoodDetailPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
 
-        <Route path="/gizlilik-politikasi" element={<PrivacyPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

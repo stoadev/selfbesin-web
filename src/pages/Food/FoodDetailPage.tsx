@@ -124,6 +124,7 @@ export default function FoodDetailPage() {
     "@context": "https://schema.org",
     "@type": "Product",
     name: food.name,
+    url: `https://selfbesin.com/besin/${food.slug}`,
     ...(food.image_url && { image: food.image_url }),
     description: `${food.name} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
     nutrition: {
@@ -158,8 +159,17 @@ export default function FoodDetailPage() {
           property="og:description"
           content={`${food.name}: 100g = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
         />
+        <meta property="og:type" content="website" />
         <meta property="og:url" content={`https://selfbesin.com/besin/${food.slug}`} />
-        {food.image_url && <meta property="og:image" content={food.image_url} />}
+        <meta
+          property="og:image"
+          content={food.image_url || "https://selfbesin.com/og-image.png"}
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta
+          name="twitter:image"
+          content={food.image_url || "https://selfbesin.com/og-image.png"}
+        />
         <link rel="canonical" href={`https://selfbesin.com/besin/${food.slug}`} />
         <script type="application/ld+json">{JSON.stringify(jsonLdProduct)}</script>
         <script type="application/ld+json">{JSON.stringify(jsonLdBreadcrumb)}</script>
