@@ -11,9 +11,9 @@ export interface Food {
   protein_g_per_100g: number;
   carbs_g_per_100g: number;
   fat_g_per_100g: number;
-  serving_unit_name?: string;
-  serving_unit_grams?: number;
   serving_units: FoodUnit[];
+  category?: string;
+  brand?: string;
   image_url?: string;
   created_at?: string;
 }

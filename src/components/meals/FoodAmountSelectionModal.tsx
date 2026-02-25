@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo } from "react";
 import { Flame, Beef, Wheat, Droplets } from "lucide-react";
 import Modal from "../common/Modal";
-import type { Food } from "../../types";
+import type { Food, FoodUnit } from "../../types";
 import Button from "../common/Button";
 
 type FoodAmountSelectionModalProps = {
@@ -24,20 +24,20 @@ export default function FoodAmountSelectionModal({
   const [serving, setServing] = useState(initialGrams || 100);
 
   // Birimleri hazırla
-  const units = useMemo(
-    () =>
-      food?.serving_units && food.serving_units.length > 0
+  const units = useMemo(() => {
+    let u: FoodUnit[] = [];
+    try {
+      u = Array.isArray(food?.serving_units)
         ? food.serving_units
-        : food?.serving_unit_name && food.serving_unit_grams
-          ? [
-              {
-                name: food.serving_unit_name,
-                grams: Number(food.serving_unit_grams),
-              },
-            ]
-          : [],
-    [food],
-  );
+        : typeof food?.serving_units === "string"
+          ? JSON.parse(food.serving_units)
+          : [];
+    } catch (e) {
+      console.error("Scale parsing error:", e);
+      u = [];
+    }
+    return u;
+  }, [food]);
 
   // Önce tam eşleşen (initialGrams) veya 100 gram olan bir birim var mı diye bak
   const matchingUnit =
@@ -74,9 +74,16 @@ export default function FoodAmountSelectionModal({
       <div className="p-[3dvh] flex flex-col gap-[3dvh]">
         {/* Header */}
         <div className="flex flex-col gap-1">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-            {food.name}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+              {food.name}
+            </h2>
+            {food.brand && food.brand !== "Genel" && (
+              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                {food.brand}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
             Miktar Seçimi
           </p>

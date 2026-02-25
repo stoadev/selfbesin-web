@@ -10,7 +10,7 @@ import {
   X,
 } from "lucide-react";
 import { foodService } from "../../services/food.service";
-import type { Food } from "../../types";
+import type { Food, FoodUnit } from "../../types";
 import Button from "../../components/common/Button";
 import AuthModal from "../../components/common/AuthModal";
 import AddToMealModal from "../../components/meals/AddToMealModal";
@@ -42,21 +42,21 @@ export default function FoodDetailPage() {
       setFood(data);
 
       if (data) {
-        const initialUnits =
-          data.serving_units && data.serving_units.length > 0
+        let initialUnits: FoodUnit[] = [];
+        try {
+          initialUnits = Array.isArray(data.serving_units)
             ? data.serving_units
-            : data.serving_unit_name && data.serving_unit_grams
-              ? [
-                  {
-                    name: data.serving_unit_name,
-                    grams: Number(data.serving_unit_grams),
-                  },
-                ]
+            : typeof data.serving_units === "string"
+              ? JSON.parse(data.serving_units)
               : [];
+        } catch (e) {
+          console.error("Scale parsing error:", e);
+          initialUnits = [];
+        }
 
         // Önce 100 gram olan bir birim var mı diye bak
         const unitAt100 = initialUnits.find(
-          (u: { name: string; grams: number }) => Number(u.grams) === 100,
+          (u: FoodUnit) => Number(u.grams) === 100,
         );
 
         if (unitAt100) {
@@ -102,13 +102,18 @@ export default function FoodDetailPage() {
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
-  // Seçili birimi bul (Geriye uyumluluk için eski sütunları da kontrol et)
-  const units =
-    food.serving_units && food.serving_units.length > 0
+  // Seçili birimleri bul
+  let units: FoodUnit[] = [];
+  try {
+    units = Array.isArray(food.serving_units)
       ? food.serving_units
-      : food.serving_unit_name && food.serving_unit_grams
-        ? [{ name: food.serving_unit_name, grams: food.serving_unit_grams }]
+      : typeof food.serving_units === "string"
+        ? JSON.parse(food.serving_units)
         : [];
+  } catch (e) {
+    console.error("Scale parsing error:", e);
+    units = [];
+  }
 
   // Slider değerleri
   const sliderMin = 0;
@@ -131,9 +136,16 @@ export default function FoodDetailPage() {
         >
           <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
         </Link>
-        <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
-          {food.name}
-        </h1>
+        <div className="flex flex-col items-center">
+          <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
+            {food.name}
+          </h1>
+          {food.brand && food.brand !== "Genel" && (
+            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+              {food.brand}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Ana İçerik Alanı - Esnek Alan */}

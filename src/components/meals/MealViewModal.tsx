@@ -1,7 +1,7 @@
 import { Utensils, Apple, Edit2 } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
-import type { MealWithFoods, MealFood } from "../../types";
+import type { MealWithFoods, MealFood, FoodUnit } from "../../types";
 
 type MealViewModalProps = {
   isOpen: boolean;
@@ -75,20 +75,17 @@ export default function MealViewModal({
                   <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-gray-500 dark:text-gray-400">
                     <span>
                       {(() => {
-                        // Geriye uyumluluk için birimleri hazırla
-                        const units =
-                          mf.food?.serving_units &&
-                          mf.food?.serving_units.length > 0
+                        let units: FoodUnit[] = [];
+                        try {
+                          units = Array.isArray(mf.food?.serving_units)
                             ? mf.food.serving_units
-                            : mf.food?.serving_unit_name &&
-                                mf.food?.serving_unit_grams
-                              ? [
-                                  {
-                                    name: mf.food.serving_unit_name,
-                                    grams: mf.food.serving_unit_grams,
-                                  },
-                                ]
+                            : typeof mf.food?.serving_units === "string"
+                              ? JSON.parse(mf.food.serving_units)
                               : [];
+                        } catch (e) {
+                          console.error("Scale parsing error:", e);
+                          units = [];
+                        }
 
                         const matchingUnit = units.find(
                           (u) =>

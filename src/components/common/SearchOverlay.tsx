@@ -142,7 +142,9 @@ export default function SearchOverlay({
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                        {food.name}
+                        {food.brand && food.brand !== "Genel"
+                          ? `${food.brand} ${food.name}`
+                          : food.name}
                       </p>
                       <p className="text-xs text-gray-400">
                         {food.calories_per_100g} kcal · 100g

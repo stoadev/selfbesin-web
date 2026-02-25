@@ -4,7 +4,7 @@ import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import { foodService } from "../../services/food.service";
-import type { Food, MealWithFoods } from "../../types";
+import type { Food, MealWithFoods, FoodUnit } from "../../types";
 import Button from "../common/Button";
 import ConfirmModal from "../common/ConfirmModal";
 import Loading from "../common/Loading";
@@ -268,7 +268,9 @@ function AddMealModalContent({
                   <div className="flex items-center gap-3">
                     <Apple className="w-4 h-4 text-emerald-500" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {food.name}
+                      {food.brand && food.brand !== "Genel"
+                        ? `${food.brand} ${food.name}`
+                        : food.name}
                     </span>
                   </div>
                   <Plus className="w-4 h-4 text-gray-400" />
@@ -322,19 +324,17 @@ function AddMealModalContent({
                   <div className="flex items-center bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 px-2 h-8">
                     <span className="text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">
                       {(() => {
-                        const units =
-                          sf.food.serving_units &&
-                          sf.food.serving_units.length > 0
+                        let units: FoodUnit[] = [];
+                        try {
+                          units = Array.isArray(sf.food.serving_units)
                             ? sf.food.serving_units
-                            : sf.food.serving_unit_name &&
-                                sf.food.serving_unit_grams
-                              ? [
-                                  {
-                                    name: sf.food.serving_unit_name,
-                                    grams: sf.food.serving_unit_grams,
-                                  },
-                                ]
+                            : typeof sf.food.serving_units === "string"
+                              ? JSON.parse(sf.food.serving_units)
                               : [];
+                        } catch (e) {
+                          console.error("Scale parsing error:", e);
+                          units = [];
+                        }
 
                         const matchingUnit = units.find(
                           (u) =>
@@ -351,19 +351,17 @@ function AddMealModalContent({
                       })()}
                     </span>
                     {(() => {
-                      const units =
-                        sf.food.serving_units &&
-                        sf.food.serving_units.length > 0
+                      let units: FoodUnit[] = [];
+                      try {
+                        units = Array.isArray(sf.food.serving_units)
                           ? sf.food.serving_units
-                          : sf.food.serving_unit_name &&
-                              sf.food.serving_unit_grams
-                            ? [
-                                {
-                                  name: sf.food.serving_unit_name,
-                                  grams: sf.food.serving_unit_grams,
-                                },
-                              ]
+                          : typeof sf.food.serving_units === "string"
+                            ? JSON.parse(sf.food.serving_units)
                             : [];
+                      } catch (e) {
+                        console.error("Scale parsing error:", e);
+                        units = [];
+                      }
 
                       const hasUnit = units.some(
                         (u) =>

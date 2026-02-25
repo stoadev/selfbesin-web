@@ -4,7 +4,7 @@ import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import Loading from "../common/Loading";
-import type { Food, Meal } from "../../types";
+import type { Food, Meal, FoodUnit } from "../../types";
 import Button from "../common/Button";
 
 type AddToMealModalProps = {
@@ -153,17 +153,17 @@ export default function AddToMealModal({
                 {Math.round(food.calories_per_100g * (grams / 100))} kcal
               </span>
               {(() => {
-                const units =
-                  food.serving_units && food.serving_units.length > 0
+                let units: FoodUnit[] = [];
+                try {
+                  units = Array.isArray(food.serving_units)
                     ? food.serving_units
-                    : food.serving_unit_name && food.serving_unit_grams
-                      ? [
-                          {
-                            name: food.serving_unit_name,
-                            grams: food.serving_unit_grams,
-                          },
-                        ]
+                    : typeof food.serving_units === "string"
+                      ? JSON.parse(food.serving_units)
                       : [];
+                } catch (e) {
+                  console.error("Scale parsing error:", e);
+                  units = [];
+                }
 
                 const matchingUnit = units.find(
                   (u) => grams % u.grams === 0 || u.grams % grams === 0,
