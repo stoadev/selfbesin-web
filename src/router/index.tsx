@@ -1,10 +1,11 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import LandingPage from "../pages/Landing/LandingPage";
 import FoodDetailPage from "../pages/Food/FoodDetailPage";
 import SearchResultsPage from "../pages/Search/SearchResultsPage";
 import ProtectedRoute from "../components/layout/ProtectedRoute";
 import MealsPage from "../pages/Meals/MealsPage";
 import PrivacyPage from "../pages/Privacy/PrivacyPage";
+import NotFoundPage from "../pages/NotFound/NotFoundPage";
 
 import PageLayout from "../components/layout/PageLayout";
 
@@ -23,7 +24,7 @@ export default function AppRouter() {
           <Route path="/meals" element={<MealsPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );

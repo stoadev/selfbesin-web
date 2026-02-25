@@ -1,9 +1,18 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 px-5 py-10">
+      <Helmet>
+        <title>Gizlilik Politikası – Selfbesin</title>
+        <meta
+          name="description"
+          content="Selfbesin gizlilik politikası. Kişisel verilerinizin nasıl işlendiğini öğrenin."
+        />
+        <link rel="canonical" href="https://selfbesin.com/gizlilik-politikasi" />
+      </Helmet>
       <div className="max-w-3xl mx-auto">
         <Link
           to="/"

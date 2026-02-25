@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Flame, Beef, Wheat, Droplets, X } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food, FoodUnit } from "../../types";
@@ -119,8 +120,51 @@ export default function FoodDetailPage() {
         ? serving / activeUnit.grams
         : serving;
 
+  const jsonLdProduct = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: food.name,
+    ...(food.image_url && { image: food.image_url }),
+    description: `${food.name} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
+    nutrition: {
+      "@type": "NutritionInformation",
+      servingSize: "100 g",
+      calories: `${food.calories_per_100g} calories`,
+      proteinContent: `${food.protein_g_per_100g} g`,
+      carbohydrateContent: `${food.carbs_g_per_100g} g`,
+      fatContent: `${food.fat_g_per_100g} g`,
+    },
+  };
+
+  const jsonLdBreadcrumb = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://selfbesin.com" },
+      { "@type": "ListItem", position: 2, name: food.name, item: `https://selfbesin.com/besin/${food.slug}` },
+    ],
+  };
+
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+      <Helmet>
+        <title>{food.name} Besin Değerleri – Selfbesin</title>
+        <meta
+          name="description"
+          content={`${food.name} besin değerleri: 100g için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
+        />
+        <meta property="og:title" content={`${food.name} Besin Değerleri – Selfbesin`} />
+        <meta
+          property="og:description"
+          content={`${food.name}: 100g = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
+        />
+        <meta property="og:url" content={`https://selfbesin.com/besin/${food.slug}`} />
+        {food.image_url && <meta property="og:image" content={food.image_url} />}
+        <link rel="canonical" href={`https://selfbesin.com/besin/${food.slug}`} />
+        <script type="application/ld+json">{JSON.stringify(jsonLdProduct)}</script>
+        <script type="application/ld+json">{JSON.stringify(jsonLdBreadcrumb)}</script>
+      </Helmet>
+
       {/* Header - %10 dikey alan */}
       <div className="h-bar relative flex items-center justify-center px-[2dvw] border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm z-30 shrink-0">
         <Link

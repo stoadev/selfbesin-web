@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /meals
 
 Sitemap: https://selfbesin.com/sitemap.xml

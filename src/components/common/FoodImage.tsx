@@ -41,6 +41,8 @@ export default function FoodImage({
       <img
         src={src}
         alt={alt}
+        loading="lazy"
+        decoding="async"
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}

@@ -1,5 +1,6 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { Search, X, Utensils } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
@@ -68,6 +69,24 @@ export default function SearchResultsPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
+      <Helmet>
+        <title>
+          {query
+            ? `"${query}" Arama Sonuçları – Selfbesin`
+            : "Besin Ara – Selfbesin"}
+        </title>
+        <meta
+          name="description"
+          content={
+            query
+              ? `"${query}" için besin değerleri arama sonuçları. Kalori, protein ve makro besin bilgileri.`
+              : "Binlerce besini ara, anında besin değerlerini öğren."
+          }
+        />
+        <meta name="robots" content="noindex, follow" />
+        <link rel="canonical" href="https://selfbesin.com/search" />
+      </Helmet>
+
       {/* Sticky Google Bar */}
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto px-4 flex items-center gap-4">
@@ -102,6 +121,10 @@ export default function SearchResultsPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+        <h1 className="sr-only">
+          {query ? `"${query}" için besin arama sonuçları` : "Besin Arama"}
+        </h1>
+
         {/* Sonuç Sayısı ve Info */}
         <div className="mb-6">
           <p className="text-xs text-gray-500 dark:text-gray-400">
