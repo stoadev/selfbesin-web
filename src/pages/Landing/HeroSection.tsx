@@ -15,7 +15,7 @@ export default function HeroSection() {
   const [results, setResults] = useState<Food[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isKeyboardNav, setIsKeyboardNav] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchedQuery, setLastFetchedQuery] = useState("");
@@ -61,7 +61,7 @@ export default function HeroSection() {
           }
 
           setResults(finalResults);
-          setSelectedIndex(0);
+          setSelectedIndex(-1);
           setLastFetchedQuery(debouncedQuery);
         }
       } catch (err) {
@@ -118,8 +118,8 @@ export default function HeroSection() {
   }
 
   function handleSearch() {
-    if (results.length > 0) {
-      const match = results[selectedIndex] ?? results[0];
+    if (selectedIndex >= 0 && results.length > 0) {
+      const match = results[selectedIndex];
       if (match) {
         const searchTerm =
           match.brand && match.brand !== "Genel"
@@ -201,7 +201,7 @@ export default function HeroSection() {
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
-                  setSelectedIndex(0);
+                  setSelectedIndex(-1);
                   if (!isMobile()) setIsDropdownOpen(true);
                 }}
                 onClick={handleInputClick}
@@ -219,7 +219,7 @@ export default function HeroSection() {
                   } else if (e.key === "ArrowUp") {
                     e.preventDefault();
                     setIsKeyboardNav(true);
-                    setSelectedIndex((i) => Math.max(i - 1, 0));
+                    setSelectedIndex((i) => Math.max(i - 1, -1));
                   } else if (e.key === "Enter") {
                     handleSearch();
                   }
@@ -272,6 +272,7 @@ export default function HeroSection() {
               onRecentSelect={(term) => setQuery(term)}
               onAddSearch={addSearch}
               onRemoveSearch={removeSearch}
+              onMouseLeave={() => setSelectedIndex(-1)}
             />
           )}
         </div>
@@ -293,6 +294,7 @@ function DesktopDropdown({
   onRecentSelect,
   onAddSearch,
   onRemoveSearch,
+  onMouseLeave,
 }: {
   query: string;
   onClose: () => void;
@@ -305,13 +307,17 @@ function DesktopDropdown({
   onRecentSelect: (term: string) => void;
   onAddSearch: (term: string) => void;
   onRemoveSearch: (term: string) => void;
+  onMouseLeave?: () => void;
 }) {
   const navigate = useNavigate();
 
   // Query boşsa ve geçmiş varsa, geçmiş aramaları göster
   if (!query && recentSearches.length > 0) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40">
+      <div
+        onMouseLeave={onMouseLeave}
+        className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40"
+      >
         <div className="px-5 py-3 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
             Son Aramalar
@@ -356,7 +362,10 @@ function DesktopDropdown({
   if (!query) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40">
+    <div
+      onMouseLeave={onMouseLeave}
+      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40"
+    >
       <ul>
         {isLoading ? (
           <li className="px-5 py-4 text-sm text-gray-400 text-center">
