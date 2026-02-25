@@ -38,9 +38,29 @@ export default function HeroSection() {
       if (active) setIsLoading(true);
 
       try {
-        const data = await foodService.searchFoods(debouncedQuery);
+        const localResults = await foodService.searchFoods(debouncedQuery);
+        let finalResults = localResults;
+
         if (active) {
-          setResults(data);
+          // Eğer lokalde sonuç azsa veya tam eşleşme (isim içinde sorgu geçmesi) yoksa webhook'u da dene
+          const hasGoodMatch = localResults.some((f) =>
+            f.name
+              .toLocaleLowerCase("tr")
+              .includes(debouncedQuery.toLocaleLowerCase("tr")),
+          );
+
+          if (
+            (!hasGoodMatch || localResults.length < 3) &&
+            debouncedQuery.length >= 3
+          ) {
+            const freshData =
+              await foodService.fetchAndLoadFood(debouncedQuery);
+            const existingIds = new Set(localResults.map((f) => f.id));
+            const newItems = freshData.filter((f) => !existingIds.has(f.id));
+            finalResults = [...localResults, ...newItems];
+          }
+
+          setResults(finalResults);
           setSelectedIndex(0);
           setLastFetchedQuery(debouncedQuery);
         }

@@ -96,4 +96,68 @@ export const foodService = {
 
     return data;
   },
+
+  async fetchAndLoadFood(query: string): Promise<Food[]> {
+    const webhookUrl = import.meta.env.VITE_FOOD_FETCH_WEBHOOK_URL;
+    console.log("🔍 Triggering webhook for:", query, "URL:", webhookUrl);
+
+    if (!webhookUrl) {
+      console.warn("Food fetch webhook URL not configured.");
+      return [];
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: query }),
+      });
+
+      console.log("📡 Webhook Response Status:", response.status);
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("📦 Webhook Data Received:", data);
+
+      // n8n response is an array: [{ success: true, food: { ... } }, ...]
+      const results = Array.isArray(data) ? data : data ? [data] : [];
+
+      const foods: Food[] = results
+        .map((item) => {
+          const foodData = item?.food;
+          if (!foodData) {
+            console.log("⚠️ No food data in n8n item:", item);
+            return null;
+          }
+
+          // Parse serving_units if it's a string
+          let servingUnits = foodData.serving_units;
+          if (typeof servingUnits === "string") {
+            try {
+              servingUnits = JSON.parse(servingUnits);
+            } catch (e) {
+              console.warn("Failed to parse serving_units string:", e);
+              servingUnits = [];
+            }
+          }
+
+          return {
+            ...foodData,
+            serving_units: Array.isArray(servingUnits) ? servingUnits : [],
+          };
+        })
+        .filter((f): f is Food => f !== null);
+
+      console.log("✅ Parsed Foods:", foods.length);
+      return foods;
+    } catch (err) {
+      console.error("❌ Error in fetchAndLoadFood:", err);
+      return [];
+    }
+  },
 };

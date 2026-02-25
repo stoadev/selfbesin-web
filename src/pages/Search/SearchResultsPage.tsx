@@ -30,8 +30,22 @@ export default function SearchResultsPage() {
   const handleFetchResults = async (q: string) => {
     setIsLoading(true);
     try {
-      const data = await foodService.searchFoods(q);
-      setResults(data);
+      const localResults = await foodService.searchFoods(q);
+      let finalResults = localResults;
+
+      // Eğer lokalde sonuç azsa veya tam eşleşme (isim içinde sorgu geçmesi) yoksa webhook'u da dene
+      const hasGoodMatch = localResults.some((f) =>
+        f.name.toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")),
+      );
+
+      if ((!hasGoodMatch || localResults.length < 3) && q.length >= 3) {
+        const freshData = await foodService.fetchAndLoadFood(q);
+        const existingIds = new Set(localResults.map((f) => f.id));
+        const newItems = freshData.filter((f) => !existingIds.has(f.id));
+        finalResults = [...localResults, ...newItems];
+      }
+
+      setResults(finalResults);
     } catch (err) {
       console.error(err);
     } finally {

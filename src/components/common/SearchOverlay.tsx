@@ -197,12 +197,6 @@ export default function SearchOverlay({
               </span>{" "}
               için sonuç bulunamadı.
             </p>
-            <p className="text-xs text-gray-400">
-              Besini biz ekleyelim mi?{" "}
-              <button className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">
-                Talep gönder
-              </button>
-            </p>
           </div>
         ) : null}
       </div>
