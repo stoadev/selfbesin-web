@@ -1,9 +1,10 @@
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { Search, Utensils, X } from "lucide-react";
+import { Search, X, Utensils } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
 import SearchOverlay from "../../components/common/SearchOverlay";
+import FoodImage from "../../components/common/FoodImage";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 
 export default function SearchResultsPage() {
@@ -149,16 +150,13 @@ export default function SearchResultsPage() {
                   </p>
                 </div>
 
-                {/* Optional Image */}
-                {food.image_url && (
-                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-gray-800 shrink-0">
-                    <img
-                      src={food.image_url}
-                      alt={food.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-                )}
+                {/* Image or Placeholder using FoodImage component */}
+                <FoodImage
+                  src={food.image_url}
+                  alt={food.name}
+                  className="w-24 h-24 md:w-28 md:h-28 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 shrink-0"
+                  iconClassName="w-8 h-8"
+                />
               </button>
             </article>
           ))}

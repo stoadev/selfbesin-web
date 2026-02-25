@@ -1,6 +1,7 @@
-import { Utensils, Apple, Edit2 } from "lucide-react";
+import { Utensils, Edit2 } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
+import FoodImage from "../common/FoodImage";
 import type { MealWithFoods, MealFood, FoodUnit } from "../../types";
 
 type MealViewModalProps = {
@@ -57,17 +58,12 @@ export default function MealViewModal({
             >
               {/* Top Piece: Name and Amount */}
               <div className="flex items-center gap-[1.5dvw] p-[1.5dvw] bg-white dark:bg-gray-800 rounded-t-xl border border-gray-100 dark:border-gray-700">
-                <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-900 flex items-center justify-center shrink-0 overflow-hidden group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/30 transition-colors">
-                  {mf.food?.image_url ? (
-                    <img
-                      src={mf.food.image_url}
-                      alt={mf.food.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Apple className="w-4 h-4 text-emerald-500" />
-                  )}
-                </div>
+                <FoodImage
+                  src={mf.food?.image_url}
+                  alt={mf.food?.name || "Besin"}
+                  className="w-8 h-8 rounded-lg shrink-0 overflow-hidden"
+                  iconClassName="w-4 h-4"
+                />
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                     {mf.food?.name || "Bilinmeyen Besin"}

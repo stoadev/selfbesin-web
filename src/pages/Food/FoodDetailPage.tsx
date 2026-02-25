@@ -1,14 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import {
-  ArrowLeft,
-  Flame,
-  Beef,
-  Wheat,
-  Droplets,
-  Utensils,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Flame, Beef, Wheat, Droplets, X } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food, FoodUnit } from "../../types";
 import Button from "../../components/common/Button";
@@ -16,6 +8,7 @@ import AuthModal from "../../components/common/AuthModal";
 import AddToMealModal from "../../components/meals/AddToMealModal";
 import Loading from "../../components/common/Loading";
 import { useAuth } from "../../hooks/useAuth";
+import FoodImage from "../../components/common/FoodImage";
 
 export default function FoodDetailPage() {
   const { user } = useAuth();
@@ -155,22 +148,14 @@ export default function FoodDetailPage() {
           onClick={() => food.image_url && setIsZoomed(true)}
           className={`w-full mx-auto h-[30dvh] rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative shrink-0 ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
         >
-          {food.image_url ? (
-            <img
-              src={food.image_url}
-              alt={food.name}
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <div className="flex flex-col items-center gap-2 opacity-40">
-              <Utensils className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-[10px] font-medium text-emerald-800 dark:text-emerald-200 uppercase tracking-widest">
-                Görsel Yok
-              </span>
-            </div>
-          )}
+          <FoodImage
+            src={food.image_url}
+            alt={food.name}
+            className="w-full h-full"
+            iconClassName="w-12 h-12"
+          />
           {food.image_url && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 pointer-events-none" />
           )}
         </div>
 
