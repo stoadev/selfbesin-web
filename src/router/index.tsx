@@ -4,6 +4,7 @@ import FoodDetailPage from "../pages/Food/FoodDetailPage";
 import SearchResultsPage from "../pages/Search/SearchResultsPage";
 import ProtectedRoute from "../components/layout/ProtectedRoute";
 import MealsPage from "../pages/Meals/MealsPage";
+import PrivacyPage from "../pages/Privacy/PrivacyPage";
 
 import PageLayout from "../components/layout/PageLayout";
 
@@ -14,6 +15,8 @@ export default function AppRouter() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/besin/:slug" element={<FoodDetailPage />} />
         <Route path="/search" element={<SearchResultsPage />} />
+
+        <Route path="/gizlilik-politikasi" element={<PrivacyPage />} />
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>

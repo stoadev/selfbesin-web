@@ -17,6 +17,13 @@ export default function Footer() {
           StoaDev
         </a>
         . Tüm hakları saklıdır.
+        <span className="mx-2">•</span>
+        <a
+          href="/gizlilik-politikasi"
+          className="hover:text-emerald-600 dark:hover:text-emerald-500 transition-colors"
+        >
+          Gizlilik Politikası
+        </a>
       </div>
     </footer>
   );
