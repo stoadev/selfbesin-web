@@ -77,6 +77,11 @@ export default function FoodAmountSelectionModal({
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
               {food.name}
+              {food.qualifier && (
+                <span className="text-gray-500 dark:text-gray-400 font-normal ml-1 text-sm">
+                  ({food.qualifier})
+                </span>
+              )}
             </h2>
             {food.brand && food.brand !== "Genel" && (
               <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">

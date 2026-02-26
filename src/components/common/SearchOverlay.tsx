@@ -142,6 +142,11 @@ export default function SearchOverlay({
                     {food.brand && food.brand !== "Genel"
                       ? `${food.brand} ${food.name}`
                       : food.name}
+                    {food.qualifier && (
+                      <span className="font-normal ml-1">
+                        ({food.qualifier})
+                      </span>
+                    )}
                   </span>
                 </button>
               </li>

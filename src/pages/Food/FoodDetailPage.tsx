@@ -123,10 +123,10 @@ export default function FoodDetailPage() {
   const jsonLdProduct = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: food.name,
+    name: food.qualifier ? `${food.name} (${food.qualifier})` : food.name,
     url: `https://selfbesin.com/besin/${food.slug}`,
     ...(food.image_url && { image: food.image_url }),
-    description: `${food.name} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
+    description: `${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
     nutrition: {
       "@type": "NutritionInformation",
       servingSize: "100 g",
@@ -141,26 +141,46 @@ export default function FoodDetailPage() {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://selfbesin.com" },
-      { "@type": "ListItem", position: 2, name: food.name, item: `https://selfbesin.com/besin/${food.slug}` },
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Ana Sayfa",
+        item: "https://selfbesin.com",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: food.qualifier ? `${food.name} (${food.qualifier})` : food.name,
+        item: `https://selfbesin.com/besin/${food.slug}`,
+      },
     ],
   };
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900">
       <Helmet>
-        <title>{food.name} Besin Değerleri – Selfbesin</title>
+        <title>
+          {food.name}
+          {food.qualifier ? ` (${food.qualifier})` : ""} Besin Değerleri –
+          Selfbesin
+        </title>
         <meta
           name="description"
-          content={`${food.name} besin değerleri: 100g için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
+          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} besin değerleri: 100g için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
         />
-        <meta property="og:title" content={`${food.name} Besin Değerleri – Selfbesin`} />
+        <meta
+          property="og:title"
+          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} Besin Değerleri – Selfbesin`}
+        />
         <meta
           property="og:description"
-          content={`${food.name}: 100g = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
+          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""}: 100g = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
         />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content={`https://selfbesin.com/besin/${food.slug}`} />
+        <meta
+          property="og:url"
+          content={`https://selfbesin.com/besin/${food.slug}`}
+        />
         <meta
           property="og:image"
           content={food.image_url || "https://selfbesin.com/og-image.png"}
@@ -170,9 +190,16 @@ export default function FoodDetailPage() {
           name="twitter:image"
           content={food.image_url || "https://selfbesin.com/og-image.png"}
         />
-        <link rel="canonical" href={`https://selfbesin.com/besin/${food.slug}`} />
-        <script type="application/ld+json">{JSON.stringify(jsonLdProduct)}</script>
-        <script type="application/ld+json">{JSON.stringify(jsonLdBreadcrumb)}</script>
+        <link
+          rel="canonical"
+          href={`https://selfbesin.com/besin/${food.slug}`}
+        />
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLdProduct)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLdBreadcrumb)}
+        </script>
       </Helmet>
 
       {/* Header - %10 dikey alan */}
@@ -186,6 +213,11 @@ export default function FoodDetailPage() {
         <div className="flex flex-col items-center">
           <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
             {food.name}
+            {food.qualifier && (
+              <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
+                ({food.qualifier})
+              </span>
+            )}
           </h1>
           {food.brand && food.brand !== "Genel" && (
             <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">

@@ -6,6 +6,7 @@ export interface FoodUnit {
 export interface Food {
   id: string;
   name: string;
+  qualifier?: string;
   slug: string;
   calories_per_100g: number;
   protein_g_per_100g: number;
@@ -16,6 +17,11 @@ export interface Food {
   brand?: string;
   image_url?: string;
   created_at?: string;
+  // Meilisearch ranking fields (not in Supabase)
+  qualifier_count?: number;
+  qualifier_score?: number;
+  brand_priority?: number;
+  qualifier_vector?: string;
 }
 
 export interface Meal {

@@ -36,9 +36,13 @@ export default function SearchResultsPage() {
       let finalResults = localResults;
 
       // Eğer lokalde sonuç azsa veya tam eşleşme (isim içinde sorgu geçmesi) yoksa webhook'u da dene
-      const hasGoodMatch = localResults.some((f) =>
-        f.name.toLocaleLowerCase("tr").includes(q.toLocaleLowerCase("tr")),
-      );
+      const hasGoodMatch = localResults.some((f) => {
+        const fullName =
+          `${f.brand || ""} ${f.name} ${f.qualifier || ""}`.toLocaleLowerCase(
+            "tr",
+          );
+        return fullName.includes(q.toLocaleLowerCase("tr"));
+      });
 
       if ((!hasGoodMatch || localResults.length < 3) && q.length >= 3) {
         const freshData = await foodService.fetchAndLoadFood(q);
@@ -84,9 +88,15 @@ export default function SearchResultsPage() {
           }
         />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://selfbesin.com/og-image.png" />
+        <meta
+          property="og:image"
+          content="https://selfbesin.com/og-image.png"
+        />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://selfbesin.com/og-image.png" />
+        <meta
+          name="twitter:image"
+          content="https://selfbesin.com/og-image.png"
+        />
         <meta name="robots" content="noindex, follow" />
         <link rel="canonical" href="https://selfbesin.com/search" />
       </Helmet>
@@ -162,18 +172,24 @@ export default function SearchResultsPage() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg md:text-xl font-semibold text-[#1a0dab] dark:text-[#8ab4f8] group-hover:underline mb-1">
+                  <h3 className="text-lg md:text-xl font-semibold text-[#1a0dab] dark:text-[#8ab4f8] group-hover:underline mb-1 cursor-pointer">
                     {food.brand && food.brand !== "Genel"
                       ? `${food.brand} ${food.name}`
                       : food.name}
+                    {food.qualifier && (
+                      <span className="font-normal text-sm md:text-base ml-1">
+                        ({food.qualifier})
+                      </span>
+                    )}
                   </h3>
 
                   {/* Snippet / Description */}
                   <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 md:line-clamp-3 leading-relaxed">
-                    {food.name} besininin 100 gramı {food.calories_per_100g}{" "}
-                    kaloridir. Macro değerleri: {food.protein_g_per_100g}g
-                    Protein, {food.carbs_g_per_100g}g Karbonhidrat,{" "}
-                    {food.fat_g_per_100g}g Yağ içerir.
+                    {food.name}
+                    {food.qualifier ? ` (${food.qualifier})` : ""} besininin 100
+                    gramı {food.calories_per_100g} kaloridir. Macro değerleri:{" "}
+                    {food.protein_g_per_100g}g Protein, {food.carbs_g_per_100g}g
+                    Karbonhidrat, {food.fat_g_per_100g}g Yağ içerir.
                   </p>
                 </div>
 

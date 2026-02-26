@@ -67,6 +67,11 @@ export default function MealViewModal({
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                     {mf.food?.name || "Bilinmeyen Besin"}
+                    {mf.food?.qualifier && (
+                      <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">
+                        ({mf.food.qualifier})
+                      </span>
+                    )}
                   </h4>
                   <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-gray-500 dark:text-gray-400">
                     <span>
