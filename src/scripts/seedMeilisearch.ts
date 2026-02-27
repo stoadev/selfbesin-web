@@ -5,49 +5,87 @@ import { BRAND_PRIORITY_MAP } from "../constants/brands";
 
 const client = new MeiliSearch({
   host: import.meta.env.VITE_MEILISEARCH_URL,
-  apiKey: import.meta.env.VITE_MEILISEARCH_API_KEY,
+  apiKey: import.meta.env.VITE_MEILISEARCH_ADMIN_KEY,
 });
 
 /**
- * Parses qualifier string and returns individual qualifiers (lowercase).
- * Handles comma-separated qualifiers like "Tam Yağlı, Laktozsuz"
+ * Normalizes qualifier input (array or comma-separated string) to lowercase array.
  */
-function parseQualifiers(qualifier?: string | null): string[] {
+function parseQualifiers(qualifier?: string | string[] | null): string[] {
   if (!qualifier) return [];
-  return qualifier
-    .split(",")
-    .map((q) => q.trim().toLocaleLowerCase("tr"))
-    .filter(Boolean);
+  const raw = Array.isArray(qualifier) ? qualifier : qualifier.split(",");
+  return raw.map((q) => q.trim().toLocaleLowerCase("tr")).filter(Boolean);
 }
 
 /**
  * Calculates qualifier_score from the sum of individual qualifier priorities.
- * Unknown qualifiers get a high default priority (9999).
+ * Unknown qualifiers get a high default priority (99999).
  */
 function calcQualifierScore(qualifiers: string[]): number {
   if (qualifiers.length === 0) return 0;
   return qualifiers.reduce((sum, q) => {
-    return sum + (QUALIFIER_PRIORITY_MAP.get(q) ?? 9999);
+    return sum + (QUALIFIER_PRIORITY_MAP.get(q) ?? 99999);
   }, 0);
 }
 
 /**
- * Looks up brand priority. Unknown brands get 999.
+ * Looks up brand priority. Unknown brands get 99999.
  */
 function calcBrandPriority(brand?: string | null): number {
-  if (!brand) return 999;
-  return BRAND_PRIORITY_MAP.get(brand.toLocaleLowerCase("tr")) ?? 999;
+  if (!brand) return 99999;
+  return BRAND_PRIORITY_MAP.get(brand.toLocaleLowerCase("tr")) ?? 99999;
+}
+
+/**
+ * Builds a composite search_text: "qualifier1 qualifier2 name"
+ * Enables proper proximity scoring when searching "yarım yağlı süt"
+ */
+function buildSearchText(qualifiers: string[], name: string): string {
+  const parts = [...qualifiers, name.toLocaleLowerCase("tr")];
+  return parts.join(" ");
 }
 
 const seed = async () => {
   const { data, error } = await supabase.from("foods").select("*");
   if (error) throw error;
 
+  // Detect problematic qualifiers (ones that contain food-type words unrelated to the food name)
+  const foodTypeWords = [
+    "süt",
+    "peynir",
+    "yoğurt",
+    "ekmek",
+    "makarna",
+    "pirinç",
+    "tavuk",
+    "et",
+  ];
+  const problematic: { name: string; qualifier: string[]; slug: string }[] = [];
+
   // Enrich each document with ranking fields
   const enriched = (data ?? []).map((food) => {
     const qualifiers = parseQualifiers(food.qualifier);
+
+    // Flag qualifiers that contain food-type words not in the food's own name
+    for (const q of qualifiers) {
+      const hasExtraFoodWord = foodTypeWords.some(
+        (fw) =>
+          q.includes(fw) && !food.name.toLocaleLowerCase("tr").includes(fw),
+      );
+      if (hasExtraFoodWord) {
+        problematic.push({
+          name: food.name,
+          qualifier: qualifiers,
+          slug: food.slug,
+        });
+        break;
+      }
+    }
+
     return {
       ...food,
+      search_text: buildSearchText(qualifiers, food.name),
+      name_word_count: food.name.trim().split(/\s+/).length,
       qualifier_count: qualifiers.length,
       qualifier_score: calcQualifierScore(qualifiers),
       brand_priority: calcBrandPriority(food.brand),
@@ -58,7 +96,7 @@ const seed = async () => {
   const index = client.index("foods");
   await index.addDocuments(enriched);
   await index.updateSettings({
-    searchableAttributes: ["name", "brand", "slug"],
+    searchableAttributes: ["search_text", "name", "brand"],
     filterableAttributes: ["qualifier_vector"],
     rankingRules: [
       "words",
@@ -67,6 +105,7 @@ const seed = async () => {
       "attribute",
       "sort",
       "exactness",
+      "name_word_count:asc",
       "qualifier_count:asc",
       "qualifier_score:asc",
       "brand_priority:asc",
@@ -78,6 +117,13 @@ const seed = async () => {
   });
 
   console.log("Yüklendi:", enriched.length, "besin (ranking alanlarıyla)");
+
+  if (problematic.length > 0) {
+    console.log("\n⚠️  Sorunlu qualifier'lar (besin tipi kelime içerenler):");
+    for (const p of problematic) {
+      console.log(`  - ${p.name} [${p.qualifier.join(", ")}] (${p.slug})`);
+    }
+  }
 };
 
 seed();

@@ -2,6 +2,7 @@
 import { Flame, Beef, Wheat, Droplets } from "lucide-react";
 import Modal from "../common/Modal";
 import type { Food, FoodUnit } from "../../types";
+import { getBasisLabel } from "../../types";
 import Button from "../common/Button";
 
 type FoodAmountSelectionModalProps = {
@@ -55,6 +56,7 @@ export default function FoodAmountSelectionModal({
 
   if (!food) return null;
 
+  const { unit, unitLabel, quantityLabel } = getBasisLabel(food);
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
@@ -77,9 +79,9 @@ export default function FoodAmountSelectionModal({
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
               {food.name}
-              {food.qualifier && (
+              {food.qualifier && food.qualifier.length > 0 && (
                 <span className="text-gray-500 dark:text-gray-400 font-normal ml-1 text-sm">
-                  ({food.qualifier})
+                  {food.qualifier.join(" ")}
                 </span>
               )}
             </h2>
@@ -101,17 +103,17 @@ export default function FoodAmountSelectionModal({
               {selectionMode === "unit" && activeUnit
                 ? activeUnit.name.charAt(0).toUpperCase() +
                   activeUnit.name.slice(1)
-                : "Ağırlık (gram)"}
+                : quantityLabel}
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
                 {selectionMode === "unit" && activeUnit
                   ? (serving / activeUnit.grams).toFixed(1).replace(".0", "")
-                  : `${serving}g`}
+                  : `${serving}${unit}`}
               </span>
               {selectionMode === "unit" && activeUnit && (
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-1">
-                  ({serving}g)
+                  ({serving}{unit})
                 </span>
               )}
             </div>
@@ -157,7 +159,7 @@ export default function FoodAmountSelectionModal({
                     : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                 }`}
               >
-                <span className="truncate">Gram</span>
+                <span className="truncate">{unitLabel}</span>
               </button>
               {units.map((unit, idx) => (
                 <button

@@ -3,6 +3,7 @@ import Modal from "../common/Modal";
 import Button from "../common/Button";
 import FoodImage from "../common/FoodImage";
 import type { MealWithFoods, MealFood, FoodUnit } from "../../types";
+import { getBasisLabel } from "../../types";
 
 type MealViewModalProps = {
   isOpen: boolean;
@@ -67,9 +68,9 @@ export default function MealViewModal({
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                     {mf.food?.name || "Bilinmeyen Besin"}
-                    {mf.food?.qualifier && (
+                    {mf.food?.qualifier && mf.food.qualifier.length > 0 && (
                       <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">
-                        ({mf.food.qualifier})
+                        {mf.food.qualifier.join(" ")}
                       </span>
                     )}
                   </h4>
@@ -97,9 +98,9 @@ export default function MealViewModal({
                           const count = (mf.grams / matchingUnit.grams)
                             .toFixed(1)
                             .replace(".0", "");
-                          return `${count} ${matchingUnit.name} (${mf.grams}g)`;
+                          return `${count} ${matchingUnit.name} (${mf.grams}${mf.food ? getBasisLabel(mf.food).unit : "g"})`;
                         }
-                        return `${mf.grams}g`;
+                        return `${mf.grams}${mf.food ? getBasisLabel(mf.food).unit : "g"}`;
                       })()}
                     </span>
                   </div>

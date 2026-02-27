@@ -117,14 +117,19 @@ export default function HeroSection() {
     }
   }
 
+  function buildSearchTerm(food: Food): string {
+    const parts: string[] = [];
+    if (food.brand && food.brand !== "Genel") parts.push(food.brand);
+    if (food.qualifier && food.qualifier.length > 0) parts.push(food.qualifier.join(" "));
+    parts.push(food.name);
+    return parts.join(" ");
+  }
+
   function handleSearch() {
     if (selectedIndex >= 0 && results.length > 0) {
       const match = results[selectedIndex];
       if (match) {
-        const searchTerm =
-          match.brand && match.brand !== "Genel"
-            ? `${match.brand} ${match.name}`
-            : match.name;
+        const searchTerm = buildSearchTerm(match);
         addSearch(searchTerm);
         navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
       }
@@ -377,10 +382,11 @@ function DesktopDropdown({
               <button
                 onMouseDown={() => {
                   onClose();
-                  const searchTerm =
-                    food.brand && food.brand !== "Genel"
-                      ? `${food.brand} ${food.name}`
-                      : food.name;
+                  const parts: string[] = [];
+                  if (food.brand && food.brand !== "Genel") parts.push(food.brand);
+                  if (food.qualifier && food.qualifier.length > 0) parts.push(food.qualifier.join(" "));
+                  parts.push(food.name);
+                  const searchTerm = parts.join(" ");
                   onAddSearch(searchTerm);
                   navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
                 }}
@@ -395,9 +401,11 @@ function DesktopDropdown({
               >
                 <Search className="w-4 h-4 text-gray-300 dark:text-gray-500 shrink-0" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                  {food.brand && food.brand !== "Genel"
-                    ? `${food.brand} ${food.name}`
-                    : food.name}
+                  {food.brand && food.brand !== "Genel" && <>{food.brand} </>}
+                  {food.qualifier && food.qualifier.length > 0 && (
+                    <>{food.qualifier.join(" ")} </>
+                  )}
+                  {food.name}
                 </span>
               </button>
             </li>

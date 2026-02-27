@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import { foodService } from "../../services/food.service";
 import type { Food, MealWithFoods, FoodUnit } from "../../types";
+import { getBasisLabel } from "../../types";
 import Button from "../common/Button";
 import ConfirmModal from "../common/ConfirmModal";
 import Loading from "../common/Loading";
@@ -347,7 +348,7 @@ function AddMealModalContent({
                             .replace(".0", "");
                           return `${count} ${matchingUnit.name}`;
                         }
-                        return `${sf.grams}g`;
+                        return `${sf.grams}${getBasisLabel(sf.food).unit}`;
                       })()}
                     </span>
                     {(() => {
@@ -369,7 +370,7 @@ function AddMealModalContent({
                       );
                       return hasUnit ? (
                         <span className="text-[9px] font-bold text-gray-400 ml-1">
-                          ({sf.grams}g)
+                          ({sf.grams}{getBasisLabel(sf.food).unit})
                         </span>
                       ) : null;
                     })()}

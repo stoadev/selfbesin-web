@@ -6,7 +6,7 @@ export interface FoodUnit {
 export interface Food {
   id: string;
   name: string;
-  qualifier?: string;
+  qualifier?: string[];
   slug: string;
   calories_per_100g: number;
   protein_g_per_100g: number;
@@ -16,12 +16,22 @@ export interface Food {
   category?: string;
   brand?: string;
   image_url?: string;
+  basis_unit?: string;
   created_at?: string;
   // Meilisearch ranking fields (not in Supabase)
   qualifier_count?: number;
   qualifier_score?: number;
   brand_priority?: number;
   qualifier_vector?: string;
+}
+
+export function getBasisLabel(food: { basis_unit?: string }) {
+  const isML = food.basis_unit === "ml";
+  return {
+    unit: isML ? "ml" : "g",
+    unitLabel: isML ? "ml" : "Gram",
+    quantityLabel: isML ? "Miktar (ml)" : "Miktar (gram)",
+  };
 }
 
 export interface Meal {

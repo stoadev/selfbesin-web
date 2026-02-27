@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { ArrowLeft, Flame, Beef, Wheat, Droplets, X } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food, FoodUnit } from "../../types";
+import { getBasisLabel } from "../../types";
 import Button from "../../components/common/Button";
 import AuthModal from "../../components/common/AuthModal";
 import AddToMealModal from "../../components/meals/AddToMealModal";
@@ -95,6 +96,7 @@ export default function FoodDetailPage() {
   // Porsiyona göre hesapla
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
+  const { unit, unitLabel, quantityLabel } = getBasisLabel(food);
 
   // Seçili birimleri bul
   let units: FoodUnit[] = [];
@@ -123,13 +125,15 @@ export default function FoodDetailPage() {
   const jsonLdProduct = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: food.qualifier ? `${food.name} (${food.qualifier})` : food.name,
+    name: food.qualifier?.length
+      ? `${food.name} ${food.qualifier.join(" ")}`
+      : food.name,
     url: `https://selfbesin.com/besin/${food.slug}`,
     ...(food.image_url && { image: food.image_url }),
-    description: `${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
+    description: `${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
     nutrition: {
       "@type": "NutritionInformation",
-      servingSize: "100 g",
+      servingSize: `100 ${unit}`,
       calories: `${food.calories_per_100g} calories`,
       proteinContent: `${food.protein_g_per_100g} g`,
       carbohydrateContent: `${food.carbs_g_per_100g} g`,
@@ -150,7 +154,9 @@ export default function FoodDetailPage() {
       {
         "@type": "ListItem",
         position: 2,
-        name: food.qualifier ? `${food.name} (${food.qualifier})` : food.name,
+        name: food.qualifier?.length
+          ? `${food.name} ${food.qualifier.join(" ")}`
+          : food.name,
         item: `https://selfbesin.com/besin/${food.slug}`,
       },
     ],
@@ -161,20 +167,20 @@ export default function FoodDetailPage() {
       <Helmet>
         <title>
           {food.name}
-          {food.qualifier ? ` (${food.qualifier})` : ""} Besin Değerleri –
-          Selfbesin
+          {food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} Besin
+          Değerleri – Selfbesin
         </title>
         <meta
           name="description"
-          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} besin değerleri: 100g için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
+          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} besin değerleri: 100${unit} için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
         />
         <meta
           property="og:title"
-          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""} Besin Değerleri – Selfbesin`}
+          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} Besin Değerleri – Selfbesin`}
         />
         <meta
           property="og:description"
-          content={`${food.name}${food.qualifier ? ` (${food.qualifier})` : ""}: 100g = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
+          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""}: 100${unit} = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
         />
         <meta property="og:type" content="website" />
         <meta
@@ -213,9 +219,9 @@ export default function FoodDetailPage() {
         <div className="flex flex-col items-center">
           <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
             {food.name}
-            {food.qualifier && (
+            {food.qualifier && food.qualifier.length > 0 && (
               <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
-                ({food.qualifier})
+                {food.qualifier.join(" ")}
               </span>
             )}
           </h1>
@@ -252,17 +258,17 @@ export default function FoodDetailPage() {
               {selectionMode === "unit" && activeUnit
                 ? activeUnit.name.charAt(0).toUpperCase() +
                   activeUnit.name.slice(1)
-                : "Miktar (gram)"}
+                : quantityLabel}
             </label>
             <div className="flex items-baseline gap-1">
               <span className="text-sm font-bold text-emerald-600">
                 {selectionMode === "unit" && activeUnit
                   ? (serving / activeUnit.grams).toFixed(1).replace(".0", "")
-                  : `${serving}g`}
+                  : `${serving}${unit}`}
               </span>
               {selectionMode === "unit" && activeUnit && (
                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 ml-1">
-                  ({serving}g)
+                  ({serving}{unit})
                 </span>
               )}
             </div>
@@ -312,7 +318,7 @@ export default function FoodDetailPage() {
                     : "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:border-emerald-300 dark:hover:border-emerald-700"
                 }`}
               >
-                <span className="truncate">Gram</span>
+                <span className="truncate">{unitLabel}</span>
               </button>
               {units.map((unit, idx) => (
                 <button

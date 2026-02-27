@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet-async";
 import { Search, X, Utensils } from "lucide-react";
 import { foodService } from "../../services/food.service";
 import type { Food } from "../../types";
+import { getBasisLabel } from "../../types";
 import SearchOverlay from "../../components/common/SearchOverlay";
 import FoodImage from "../../components/common/FoodImage";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
@@ -35,20 +36,15 @@ export default function SearchResultsPage() {
       const localResults = await foodService.searchFoods(q);
       let finalResults = localResults;
 
-      // Eğer lokalde sonuç azsa veya tam eşleşme (isim içinde sorgu geçmesi) yoksa webhook'u da dene
-      const hasGoodMatch = localResults.some((f) => {
-        const fullName =
-          `${f.brand || ""} ${f.name} ${f.qualifier || ""}`.toLocaleLowerCase(
-            "tr",
-          );
-        return fullName.includes(q.toLocaleLowerCase("tr"));
-      });
-
-      if ((!hasGoodMatch || localResults.length < 3) && q.length >= 3) {
+      // Webhook'u çağır (yeni besinleri çekip enriched olarak Meilisearch'e ekler)
+      if (q.length >= 3) {
         const freshData = await foodService.fetchAndLoadFood(q);
-        const existingIds = new Set(localResults.map((f) => f.id));
-        const newItems = freshData.filter((f) => !existingIds.has(f.id));
-        finalResults = [...localResults, ...newItems];
+        if (freshData.length > 0) {
+          const refreshed = await foodService.searchFoods(q);
+          if (refreshed.length > 0) {
+            finalResults = refreshed;
+          }
+        }
       }
 
       setResults(finalResults);
@@ -173,23 +169,23 @@ export default function SearchResultsPage() {
 
                   {/* Title */}
                   <h3 className="text-lg md:text-xl font-semibold text-[#1a0dab] dark:text-[#8ab4f8] group-hover:underline mb-1 cursor-pointer">
-                    {food.brand && food.brand !== "Genel"
-                      ? `${food.brand} ${food.name}`
-                      : food.name}
-                    {food.qualifier && (
-                      <span className="font-normal text-sm md:text-base ml-1">
-                        ({food.qualifier})
-                      </span>
+                    {food.brand && food.brand !== "Genel" && <>{food.brand} </>}
+                    {food.qualifier && food.qualifier.length > 0 && (
+                      <>{food.qualifier.join(" ")} </>
                     )}
+                    {food.name}
                   </h3>
 
                   {/* Snippet / Description */}
                   <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 md:line-clamp-3 leading-relaxed">
                     {food.name}
-                    {food.qualifier ? ` (${food.qualifier})` : ""} besininin 100
-                    gramı {food.calories_per_100g} kaloridir. Macro değerleri:{" "}
-                    {food.protein_g_per_100g}g Protein, {food.carbs_g_per_100g}g
-                    Karbonhidrat, {food.fat_g_per_100g}g Yağ içerir.
+                    {food.qualifier?.length
+                      ? ` ${food.qualifier.join(" ")}`
+                      : ""}{" "}
+                    besininin 100 {getBasisLabel(food).unit === "ml" ? "ml'si" : "gramı"} {food.calories_per_100g} kaloridir.
+                    Macro değerleri: {food.protein_g_per_100g}g Protein,{" "}
+                    {food.carbs_g_per_100g}g Karbonhidrat, {food.fat_g_per_100g}
+                    g Yağ içerir.
                   </p>
                 </div>
 

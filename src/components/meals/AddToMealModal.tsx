@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
 import Loading from "../common/Loading";
 import type { Food, Meal, FoodUnit } from "../../types";
+import { getBasisLabel } from "../../types";
 import Button from "../common/Button";
 
 type AddToMealModalProps = {
@@ -146,14 +147,14 @@ export default function AddToMealModal({
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
               {food.name}
-              {food.qualifier && (
+              {food.qualifier && food.qualifier.length > 0 && (
                 <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
-                  ({food.qualifier})
+                  {food.qualifier.join(" ")}
                 </span>
               )}
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {grams}g •{" "}
+              {grams}{getBasisLabel(food).unit} •{" "}
               <span className="text-red-500 font-bold">
                 {Math.round(food.calories_per_100g * (grams / 100))} kcal
               </span>

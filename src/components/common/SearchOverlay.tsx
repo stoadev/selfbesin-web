@@ -62,10 +62,11 @@ export default function SearchOverlay({
 
   function handleSelect(food: Food) {
     onClose();
-    const searchTerm =
-      food.brand && food.brand !== "Genel"
-        ? `${food.brand} ${food.name}`
-        : food.name;
+    const parts: string[] = [];
+    if (food.brand && food.brand !== "Genel") parts.push(food.brand);
+    if (food.qualifier && food.qualifier.length > 0) parts.push(food.qualifier.join(" "));
+    parts.push(food.name);
+    const searchTerm = parts.join(" ");
     onAddSearch?.(searchTerm);
     navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
   }
@@ -139,14 +140,11 @@ export default function SearchOverlay({
                 >
                   <Search className="w-4 h-4 text-gray-300 dark:text-gray-600 shrink-0" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                    {food.brand && food.brand !== "Genel"
-                      ? `${food.brand} ${food.name}`
-                      : food.name}
-                    {food.qualifier && (
-                      <span className="font-normal ml-1">
-                        ({food.qualifier})
-                      </span>
+                    {food.brand && food.brand !== "Genel" && <>{food.brand} </>}
+                    {food.qualifier && food.qualifier.length > 0 && (
+                      <>{food.qualifier.join(" ")} </>
                     )}
+                    {food.name}
                   </span>
                 </button>
               </li>
