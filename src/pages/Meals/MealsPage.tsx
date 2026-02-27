@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Utensils,
@@ -14,6 +14,7 @@ import {
 import Loading from "../../components/common/Loading";
 import SwipeableItem from "../../components/common/SwipeableItem";
 import { useAuth } from "../../hooks/useAuth";
+import { useMeals } from "../../hooks/useMeals";
 import { supabase } from "../../lib/supabase";
 import Button from "../../components/common/Button";
 import AddMealModal from "../../components/meals/AddMealModal";
@@ -24,8 +25,7 @@ import type { MealWithFoods, Food, MealFood } from "../../types";
 
 export default function MealsPage() {
   const { user } = useAuth();
-  const [meals, setMeals] = useState<MealWithFoods[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { meals, loading, refreshMeals } = useMeals();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
@@ -51,44 +51,6 @@ export default function MealsPage() {
     isLoading: false,
   });
 
-  const fetchMeals = useCallback(
-    async (showMainLoading = false) => {
-      if (!user) {
-        setLoading(false);
-        return [];
-      }
-
-      if (showMainLoading) setLoading(true);
-
-      try {
-        const { data, error } = await supabase
-          .from("meals")
-          .select(
-            `
-          *,
-          meal_foods (
-            *,
-            food:foods (*)
-          )
-        `,
-          )
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: true });
-
-        if (error) throw error;
-        const fetchedMeals = data || [];
-        setMeals(fetchedMeals);
-        return fetchedMeals;
-      } catch (error) {
-        console.error("Error fetching meals:", error);
-        return [];
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user], // Stabilized
-  );
-
   const dailyTotals = useMemo(() => {
     return meals.reduce(
       (acc, meal) => {
@@ -112,14 +74,6 @@ export default function MealsPage() {
       { calories: 0, protein: 0, carbs: 0, fat: 0 },
     );
   }, [meals]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchMeals(meals.length === 0);
-    } else {
-      setLoading(false);
-    }
-  }, [user?.id, fetchMeals]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMealClick = (meal: MealWithFoods) => {
     setSelectedMeal(meal);
@@ -151,7 +105,7 @@ export default function MealsPage() {
 
       if (error) throw error;
 
-      const updatedMeals = await fetchMeals();
+      const updatedMeals = await refreshMeals();
 
       if (selectedMeal) {
         const found = updatedMeals.find((m) => m.id === selectedMeal.id);
@@ -185,10 +139,12 @@ export default function MealsPage() {
 
           if (error) throw error;
 
-          const updatedMeals = await fetchMeals();
+          await refreshMeals();
 
           if (selectedMeal) {
-            const found = updatedMeals.find((m) => m.id === selectedMeal.id);
+            const found = (await refreshMeals()).find(
+              (m) => m.id === selectedMeal.id,
+            );
             if (found) setSelectedMeal(found);
           }
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
@@ -221,7 +177,7 @@ export default function MealsPage() {
             .eq("id", mealId);
 
           if (error) throw error;
-          await fetchMeals();
+          await refreshMeals();
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
         } catch (error) {
           console.error("Error deleting meal:", error);
@@ -263,7 +219,7 @@ export default function MealsPage() {
         if (foodsError) throw foodsError;
       }
 
-      await fetchMeals();
+      await refreshMeals();
     } catch (error) {
       console.error("Error duplicating meal:", error);
       alert("Öğün çoğaltılırken bir hata oluştu.");
@@ -272,9 +228,22 @@ export default function MealsPage() {
     }
   };
 
-  if (loading) {
-    return <Loading fullScreen />;
-  }
+  const Skeleton = ({
+    className,
+    shimmerColor,
+  }: {
+    className?: string;
+    shimmerColor?: string;
+  }) => (
+    <div
+      className={`shimmer bg-gray-100 dark:bg-gray-800/50 rounded-xl ${className}`}
+      style={
+        shimmerColor
+          ? ({ "--shimmer-color": shimmerColor } as React.CSSProperties)
+          : {}
+      }
+    />
+  );
 
   return (
     <>
@@ -300,59 +269,113 @@ export default function MealsPage() {
         </header>
 
         {/* Günlük Toplam Özet (Daha Kompakt) */}
-        {meals.length > 0 && (
-          <div className="mb-[3dvh] grid grid-cols-4 gap-[2dvw] sm:gap-3 bg-white dark:bg-gray-900 p-[1.5dvh] rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm shrink-0">
-            <div className="flex flex-col items-center justify-center py-[0.8dvh] rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-100/30 dark:border-red-900/10">
-              <div className="flex items-center gap-1 mb-0.5">
-                <Flame className="w-2.5 h-2.5 text-red-500" />
-                <span className="text-[7px] font-black uppercase tracking-tight text-red-400">
-                  Kcal
-                </span>
+        <div className="mb-[3dvh] grid grid-cols-4 gap-[2.5dvw] sm:gap-4 shrink-0 px-1">
+          {[
+            {
+              label: "Kcal",
+              val: dailyTotals.calories,
+              color: "text-red-600 dark:text-red-400",
+              bg: "bg-gradient-to-br from-red-50/50 to-white dark:from-red-950/20 dark:to-gray-900",
+              border: "border-red-100/50 dark:border-red-900/20",
+              iconBg: "bg-red-100/50 dark:bg-red-900/40",
+              shimmerColor: "rgba(239, 68, 68, 0.4)",
+              icon: <Flame className="w-3 h-3 text-red-500" />,
+              unit: "",
+            },
+            {
+              label: "Protein",
+              val: dailyTotals.protein,
+              color: "text-blue-600 dark:text-blue-400",
+              bg: "bg-gradient-to-br from-blue-50/50 to-white dark:from-blue-950/20 dark:to-gray-900",
+              border: "border-blue-100/50 dark:border-blue-900/20",
+              iconBg: "bg-blue-100/50 dark:bg-blue-900/40",
+              shimmerColor: "rgba(59, 130, 246, 0.4)",
+              icon: <Beef className="w-3 h-3 text-blue-500" />,
+              unit: "g",
+            },
+            {
+              label: "Karb",
+              val: dailyTotals.carbs,
+              color: "text-amber-600 dark:text-amber-400",
+              bg: "bg-gradient-to-br from-amber-50/50 to-white dark:from-amber-950/20 dark:to-gray-900",
+              border: "border-amber-100/50 dark:border-amber-900/20",
+              iconBg: "bg-amber-100/50 dark:bg-amber-900/40",
+              shimmerColor: "rgba(245, 158, 11, 0.4)",
+              icon: <Wheat className="w-3 h-3 text-amber-500" />,
+              unit: "g",
+            },
+            {
+              label: "Yağ",
+              val: dailyTotals.fat,
+              color: "text-orange-600 dark:text-orange-400",
+              bg: "bg-gradient-to-br from-orange-50/50 to-white dark:from-orange-950/20 dark:to-gray-900",
+              border: "border-orange-100/50 dark:border-orange-900/20",
+              iconBg: "bg-orange-100/50 dark:bg-orange-900/40",
+              shimmerColor: "rgba(249, 115, 22, 0.4)",
+              icon: <Droplets className="w-3 h-3 text-orange-500" />,
+              unit: "g",
+            },
+          ].map((item, idx) => (
+            <div
+              key={idx}
+              className={`flex flex-col items-center justify-center py-[1.2dvh] rounded-2xl ${item.bg} border ${item.border} shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5`}
+            >
+              <div
+                className={`w-6 h-6 rounded-full ${item.iconBg} flex items-center justify-center mb-1`}
+              >
+                {item.icon}
               </div>
-              <span className="text-[10px] sm:text-xs font-black text-red-600 dark:text-red-400">
-                {Math.round(dailyTotals.calories)}
+              <span className="text-[7px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-0.5">
+                {item.label}
               </span>
+              <div className="h-4 flex items-center justify-center">
+                {loading && meals.length === 0 ? (
+                  <Skeleton
+                    className="h-2 w-10 sm:w-12 rounded-full !bg-transparent"
+                    shimmerColor={item.shimmerColor}
+                  />
+                ) : (
+                  <span
+                    className={`text-xs sm:text-sm font-black ${item.color} leading-none tracking-tight`}
+                  >
+                    {Math.round(item.val)}
+                    <span className="text-[9px] ml-0.5 opacity-70 font-bold uppercase whitespace-nowrap">
+                      {item.unit}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
+          ))}
+        </div>
 
-            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100/30 dark:border-blue-900/10">
-              <div className="flex items-center gap-1 mb-0.5">
-                <Beef className="w-2.5 h-2.5 text-blue-500" />
-                <span className="text-[7px] font-black uppercase tracking-tight text-blue-400">
-                  Protein
-                </span>
+        {loading && meals.length === 0 ? (
+          <div className="flex-1 min-h-0 relative mb-[1dvh]">
+            <div className="h-[50dvh] sm:h-[60dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
+              <div className="space-y-[1dvh]">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="relative overflow-hidden rounded-3xl">
+                    <div className="relative bg-white dark:bg-gray-950 rounded-3xl">
+                      <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm">
+                        <div className="p-4 sm:p-5 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] min-w-0">
+                            <div className="min-w-0 flex flex-col gap-1.5">
+                              <Skeleton className="h-4 w-32 sm:w-40" />
+                              <Skeleton className="h-3 w-20 sm:w-24" />
+                            </div>
+                          </div>
+                          <div className="w-[25dvh] shrink-0 h-[38px] sm:h-[42px]">
+                            <Skeleton className="h-full w-full rounded-lg sm:rounded-xl opacity-40" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <span className="text-[10px] sm:text-xs font-black text-blue-600 dark:text-blue-400">
-                {Math.round(dailyTotals.protein)}g
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-yellow-50 dark:bg-yellow-950/50 border border-yellow-100/30 dark:border-yellow-900/10">
-              <div className="flex items-center gap-1 mb-0.5">
-                <Wheat className="w-2.5 h-2.5 text-yellow-500" />
-                <span className="text-[7px] font-black uppercase tracking-tight text-yellow-400">
-                  Karb
-                </span>
-              </div>
-              <span className="text-[10px] sm:text-xs font-black text-yellow-600 dark:text-yellow-400">
-                {Math.round(dailyTotals.carbs)}g
-              </span>
-            </div>
-
-            <div className="flex flex-col items-center justify-center py-1 rounded-xl bg-orange-50 dark:bg-orange-950/50 border border-orange-100/30 dark:border-orange-900/10">
-              <div className="flex items-center gap-1 mb-0.5">
-                <Droplets className="w-2.5 h-2.5 text-orange-500" />
-                <span className="text-[7px] font-black uppercase tracking-tight text-orange-400">
-                  Yağ
-                </span>
-              </div>
-              <span className="text-[10px] sm:text-xs font-black text-orange-600 dark:text-orange-400">
-                {Math.round(dailyTotals.fat)}g
-              </span>
             </div>
           </div>
-        )}
-
-        {meals.length === 0 ? (
+        ) : meals.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-3xl p-[5dvh] sm:p-10 text-center border border-gray-100 dark:border-gray-800 shadow-sm flex-1 flex flex-col items-center justify-center">
             <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl flex items-center justify-center mb-3 text-emerald-600 dark:text-emerald-400">
               <Utensils className="w-6 h-6" />
@@ -399,18 +422,21 @@ export default function MealsPage() {
                       },
                     ]}
                   >
-                    <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300">
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group/card relative">
+                      {/* Accent Line */}
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500/80 to-emerald-600/80 rounded-full my-4" />
+
                       <div
-                        className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-gray-50 transition-colors dark:hover:bg-gray-800/30"
+                        className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-gray-50/80 transition-colors dark:hover:bg-gray-800/40 pl-6"
                         onClick={() => handleMealClick(meal)}
                       >
                         <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] min-w-0">
                           <div className="min-w-0">
-                            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight truncate">
+                            <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white leading-tight truncate mb-1">
                               {meal.name}
                             </h3>
-                            <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] text-[10px] text-gray-400 dark:text-gray-500">
-                              <Calendar className="w-3 h-3" />
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tighter">
+                              <Calendar className="w-3 h-3 text-emerald-500/70" />
                               {new Date(meal.created_at).toLocaleDateString(
                                 "tr-TR",
                               )}
@@ -418,63 +444,64 @@ export default function MealsPage() {
                           </div>
                         </div>
 
-                        <div className="w-[25dvh] shrink-0">
-                          <div className="flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50 rounded-lg sm:rounded-xl border border-gray-100 dark:border-gray-700 px-[1.5dvh] sm:px-3 py-[0.5dvh] sm:py-1.5 h-full">
-                            <div className="flex flex-col items-center">
-                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                Kcal
-                              </span>
-                              <span className="text-[10px] sm:text-xs font-bold text-red-500">
-                                {Math.round(
+                        <div className="shrink-0">
+                          <div className="flex items-center gap-1 bg-gray-50/50 dark:bg-gray-950/50 p-1 rounded-2xl border border-gray-100/50 dark:border-gray-800/50">
+                            {[
+                              {
+                                val: Math.round(
                                   meal.meal_foods.reduce(
                                     (acc, mf) => acc + mf.calories,
                                     0,
                                   ),
-                                )}
-                              </span>
-                            </div>
-                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                Prot
-                              </span>
-                              <span className="text-[10px] sm:text-xs font-bold text-blue-500">
-                                {Math.round(
+                                ),
+                                color: "text-red-500",
+                                label: "K",
+                              },
+                              {
+                                val: Math.round(
                                   meal.meal_foods.reduce(
                                     (acc, mf) => acc + mf.protein,
                                     0,
                                   ),
-                                )}
-                              </span>
-                            </div>
-                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                Karb
-                              </span>
-                              <span className="text-[10px] sm:text-xs font-bold text-yellow-500">
-                                {Math.round(
+                                ),
+                                color: "text-blue-500",
+                                label: "P",
+                              },
+                              {
+                                val: Math.round(
                                   meal.meal_foods.reduce(
                                     (acc, mf) => acc + (mf.carbs || 0),
                                     0,
                                   ),
-                                )}
-                              </span>
-                            </div>
-                            <div className="w-px h-3 sm:h-4 bg-gray-200 dark:bg-gray-700" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase leading-none mb-0.5">
-                                Yağ
-                              </span>
-                              <span className="text-[10px] sm:text-xs font-bold text-orange-500">
-                                {Math.round(
+                                ),
+                                color: "text-amber-500",
+                                label: "C",
+                              },
+                              {
+                                val: Math.round(
                                   meal.meal_foods.reduce(
                                     (acc, mf) => acc + mf.fat,
                                     0,
                                   ),
-                                )}
-                              </span>
-                            </div>
+                                ),
+                                color: "text-orange-500",
+                                label: "Y",
+                              },
+                            ].map((macro, midx) => (
+                              <div
+                                key={midx}
+                                className="flex flex-col items-center justify-center w-8 sm:w-10 py-1"
+                              >
+                                <span
+                                  className={`text-[10px] sm:text-xs font-black ${macro.color} leading-none mb-0.5`}
+                                >
+                                  {macro.val}
+                                </span>
+                                <span className="text-[7px] font-black text-gray-400 dark:text-gray-600 uppercase">
+                                  {macro.label}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -494,7 +521,7 @@ export default function MealsPage() {
           setMealToEdit(null);
         }}
         onSuccess={async () => {
-          const updatedMeals = await fetchMeals();
+          const updatedMeals = await refreshMeals();
           if (mealToEdit) {
             const updatedMeal = updatedMeals.find(
               (m) => m.id === mealToEdit.id,

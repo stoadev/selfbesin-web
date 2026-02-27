@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, Lightbulb, SendHorizontal, Clock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/common/Button";
@@ -7,6 +7,10 @@ import { foodService } from "../../services/food.service";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 import type { Food } from "../../types";
+
+export type CombinedItem =
+  | { type: "history"; term: string; id: string }
+  | { type: "result"; food: Food; id: string; _label: string };
 
 export default function HeroSection() {
   const navigate = useNavigate();
@@ -19,6 +23,7 @@ export default function HeroSection() {
   const [isKeyboardNav, setIsKeyboardNav] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchedQuery, setLastFetchedQuery] = useState("");
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
 
   const debouncedQuery = useDebounce(query, 300);
   const { recentSearches, addSearch, removeSearch, clearHistory } =
@@ -51,7 +56,7 @@ export default function HeroSection() {
 
           if (
             (!hasGoodMatch || localResults.length < 3) &&
-            debouncedQuery.length >= 3
+            debouncedQuery.length >= 1
           ) {
             const freshData =
               await foodService.fetchAndLoadFood(debouncedQuery);
@@ -76,30 +81,21 @@ export default function HeroSection() {
     return () => {
       active = false;
     };
-  }, [debouncedQuery, setSelectedIndex]);
+  }, [debouncedQuery]);
 
-  // Desktop'ta otomatik odaklanma
+  // Pencere boyutu değiştiğinde isMobile güncelle
   useEffect(() => {
-    if (!isMobile()) {
-      searchInputRef.current?.focus();
-    }
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const isMobile = () => window.innerWidth < 640;
-
-  function handleFocus() {
-    // Google tarzı: Odaklanınca direkt dropdown açılmasın (mobilde arama sayfası açılmaya devam eder)
-    if (isMobile()) {
-      setIsSearchOpen(true);
+  // Sayfa açıldığında otomatik odaklan (Dropdown'ı açmadan)
+  useEffect(() => {
+    if (!isMobile) {
+      searchInputRef.current?.focus();
     }
-  }
-
-  // Arama çubuğu tıklama (Dropdown'ı zorla açmak için)
-  function handleInputClick() {
-    if (!isMobile()) {
-      setIsDropdownOpen(true);
-    }
-  }
+  }, [isMobile]);
 
   async function handleSuggest() {
     setIsLoading(true);
@@ -108,7 +104,7 @@ export default function HeroSection() {
       if (food) {
         setQuery(food.name);
         // Yazı gelince dropdown'ı açalım ki sonuçlar görünsün
-        if (!isMobile()) setIsDropdownOpen(true);
+        if (!isMobile) setIsDropdownOpen(true);
       }
     } catch (error) {
       console.error("Error getting random food:", error);
@@ -117,25 +113,103 @@ export default function HeroSection() {
     }
   }
 
-  function buildSearchTerm(food: Food): string {
-    const parts: string[] = [];
-    if (food.brand && food.brand !== "Genel") parts.push(food.brand);
-    if (food.qualifier && food.qualifier.length > 0) parts.push(food.qualifier.join(" "));
-    parts.push(food.name);
-    return parts.join(" ");
+  function buildSearchTerm(food: Food, currentQuery?: string): string {
+    const brand = food.brand && food.brand !== "Genel" ? food.brand : "";
+    const name = food.name;
+
+    // Her bir belirteci ayrı bir parça olarak hiyerarşiye ekleyelim (Granüler kontrol için)
+    const components: { type: string; val: string }[] = [];
+    if (brand) components.push({ type: "brand", val: brand });
+    if (food.qualifier && food.qualifier.length > 0) {
+      food.qualifier.forEach((q) => {
+        components.push({ type: "qualifier", val: q });
+      });
+    }
+    components.push({ type: "name", val: name });
+
+    if (currentQuery && currentQuery.trim()) {
+      const q = currentQuery.toLocaleLowerCase("tr").trim();
+      const queryWords = q.split(/\s+/);
+
+      const matchedGroup: { type: string; val: string; matchIdx: number }[] =
+        [];
+      const unmatchedGroup: { type: string; val: string }[] = [];
+
+      // Öncelik sırasına göre işle: name → brand → qualifier
+      // Bir sorgu kelimesi isimle eşleştiyse, aynı kelime belirteçi tekrar çekmez.
+      const priorityOrder: Record<string, number> = {
+        name: 1,
+        brand: 2,
+        qualifier: 3,
+      };
+      const sortedComponents = [...components].sort(
+        (a, b) => (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99),
+      );
+      const usedQueryIndices = new Set<number>();
+
+      sortedComponents.forEach((c) => {
+        const valLower = c.val.toLocaleLowerCase("tr");
+        const valWords = valLower.split(/\s+/);
+
+        let firstMatchIdx = -1;
+        for (let i = 0; i < queryWords.length; i++) {
+          if (usedQueryIndices.has(i)) continue; // Bu kelime zaten eşleşti
+          const qw = queryWords[i];
+          // "Güçlü" eşleşme: Tam kelime veya kısa sorgularda prefix
+          const isMatch =
+            valWords.includes(qw) ||
+            (qw.length <= 2 && valWords.some((vw) => vw.startsWith(qw)));
+          if (isMatch) {
+            firstMatchIdx = i;
+            break;
+          }
+        }
+
+        if (firstMatchIdx !== -1) {
+          usedQueryIndices.add(firstMatchIdx);
+          matchedGroup.push({ ...c, matchIdx: firstMatchIdx });
+        } else {
+          unmatchedGroup.push(c);
+        }
+      });
+
+      // Eşleşenleri senin yazdığın kelime sırasına göre diz
+      matchedGroup.sort((a, b) => {
+        if (a.matchIdx !== b.matchIdx) return a.matchIdx - b.matchIdx;
+        const priority: Record<string, number> = {
+          name: 1,
+          brand: 2,
+          qualifier: 3,
+        };
+        return (priority[a.type] || 99) - (priority[b.type] || 99);
+      });
+
+      return [
+        ...matchedGroup.map((m) => m.val),
+        ...unmatchedGroup.map((u) => u.val),
+      ].join(" ");
+    }
+
+    // Arama yoksa standart hiyerarşiyi döndür
+    return components.map((c) => c.val).join(" ");
   }
 
   function handleSearch() {
-    if (selectedIndex >= 0 && results.length > 0) {
-      const match = results[selectedIndex];
-      if (match) {
-        const searchTerm = buildSearchTerm(match);
+    if (selectedIndex >= 0 && combinedItems.length > 0) {
+      const match = combinedItems[selectedIndex];
+      if (match.type === "history") {
+        addSearch(match.term);
+        navigate(`/search?q=${encodeURIComponent(match.term)}`);
+      } else if (match.food) {
+        const searchTerm = buildSearchTerm(match.food, query);
         addSearch(searchTerm);
         navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
       }
+      setIsDropdownOpen(false);
     } else if (query.trim()) {
       addSearch(query.trim());
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      setIsDropdownOpen(false);
     }
   }
 
@@ -148,6 +222,168 @@ export default function HeroSection() {
   const showLoading =
     isLoading || (query.trim().length > 0 && query !== lastFetchedQuery);
 
+  // Birleşik Liste Mantığı (Google Style)
+  const combinedItems = useMemo(() => {
+    // 1. Eşleşen geçmiş aramalar
+    const matchingHistory = query.trim()
+      ? recentSearches
+          .filter((s) =>
+            s.toLocaleLowerCase("tr").startsWith(query.toLocaleLowerCase("tr")),
+          )
+          .slice(0, 3)
+          .map((term) => ({ type: "history" as const, term, id: `h-${term}` }))
+      : recentSearches.slice(0, isMobile ? 10 : 8).map((term) => ({
+          type: "history" as const,
+          term,
+          id: `h-${term}`,
+        }));
+
+    // 2. Canlı sonuçlar (geçmişten farklı olanlar + Sıkı Filtreleme)
+    const historyTerms = new Set(matchingHistory.map((h) => h.term));
+    const queryWords = query.toLocaleLowerCase("tr").trim().split(/\s+/);
+
+    const uniqueResults = results.reduce<
+      { type: "result"; food: Food; id: string; _label: string }[]
+    >((acc, food) => {
+      // GÖRÜNÜR ZİNCİR (Display-Synced Chain Match):
+      // Etiketi bir kez hesapla, hem zincir kontrolü hem sıralama için sakla.
+      const label = buildSearchTerm(food, query);
+      const displayLabel = label.toLocaleLowerCase("tr");
+      const displayWords = displayLabel.split(/\s+/);
+
+      const isChainBroken = queryWords.some((qw, i) => {
+        if (!displayWords[i]) return true; // Kelime bitti ama sorgu devam ediyor
+        return !displayWords[i].startsWith(qw); // Sıradaki kelime eşleşmiyor
+      });
+
+      if (!isChainBroken && !historyTerms.has(displayLabel)) {
+        acc.push({
+          type: "result" as const,
+          food,
+          id: `r-${food.id}`,
+          _label: label,
+        });
+      }
+
+      return acc;
+    }, []);
+
+    // Akıllı Sıralama: Katmanlı Skorlama + Uzunluk Bazlı Tiebreaker
+    const sortedResults = [...uniqueResults].sort((a, b) => {
+      const q = query.toLocaleLowerCase("tr").trim();
+      const qWords = q.split(/\s+/);
+
+      const getMatchPenalty = (food: Food) => {
+        const nameText = food.name.toLocaleLowerCase("tr");
+        const brandText = (food.brand || "").toLocaleLowerCase("tr");
+        const nameWords = nameText.split(/\s+/);
+        const brandWords = brandText.split(/\s+/);
+        const qualWords = (food.qualifier || [])
+          .join(" ")
+          .toLocaleLowerCase("tr")
+          .split(/\s+/);
+
+        let totalPenalty = 0;
+
+        // KİMLİK BONUSU: Tam isim eşleşmesi
+        const isIdentityMatch = nameText === q || qWords.includes(nameText);
+        if (isIdentityMatch) totalPenalty -= 500;
+
+        for (const qw of qWords) {
+          let bestQwPenalty = 1000;
+
+          // 1. Kademe: İSİM ÖNCELİĞİ (Absolute Priority)
+          const nameFullIdx = nameWords.indexOf(qw);
+          if (nameFullIdx !== -1) {
+            bestQwPenalty = Math.min(bestQwPenalty, 0 + nameFullIdx * 2);
+          } else {
+            const namePrefixIdx = nameWords.findIndex((nw) =>
+              nw.startsWith(qw),
+            );
+            if (namePrefixIdx !== -1)
+              bestQwPenalty = Math.min(bestQwPenalty, 20 + namePrefixIdx * 2);
+          }
+
+          // 2. Kademe: MARKA
+          if (bestQwPenalty > 100) {
+            const brandFullIdx = brandWords.indexOf(qw);
+            if (brandFullIdx !== -1) {
+              bestQwPenalty = Math.min(bestQwPenalty, 100 + brandFullIdx * 2);
+            } else {
+              const brandPrefixIdx = brandWords.findIndex((bw) =>
+                bw.startsWith(qw),
+              );
+              if (brandPrefixIdx !== -1)
+                bestQwPenalty = Math.min(
+                  bestQwPenalty,
+                  120 + brandPrefixIdx * 2,
+                );
+            }
+          }
+
+          // 3. Kademe: BELİRTEÇ (Qualifier)
+          if (bestQwPenalty > 200) {
+            const qualFullIdx = qualWords.indexOf(qw);
+            if (qualFullIdx !== -1) {
+              bestQwPenalty = Math.min(bestQwPenalty, 200 + qualFullIdx * 2);
+            } else {
+              const qualPrefixIdx = qualWords.findIndex((qw_val) =>
+                qw_val.startsWith(qw),
+              );
+              if (qualPrefixIdx !== -1)
+                bestQwPenalty = Math.min(
+                  bestQwPenalty,
+                  220 + qualPrefixIdx * 2,
+                );
+            }
+          }
+
+          totalPenalty += bestQwPenalty;
+        }
+
+        return totalPenalty;
+      };
+
+      const penaltyA = getMatchPenalty(a.food);
+      const penaltyB = getMatchPenalty(b.food);
+
+      if (penaltyA !== penaltyB) return penaltyA - penaltyB;
+
+      // 2. Öncelik: Tamamen Markasız (Genel) Ürün Koruması
+      const isGenericA = !a.food.brand || a.food.brand === "Genel";
+      const isGenericB = !b.food.brand || b.food.brand === "Genel";
+      if (isGenericA && !isGenericB) return -1;
+      if (!isGenericA && isGenericB) return 1;
+
+      // 3. Öncelik: Az Belirteç (Fewer Qualifiers) Önceliği
+      // 0 belirteç > 1 belirteç > 2 belirteç... (Sade ürün her zaman kazanır)
+      const qualCountA = a.food.qualifier?.length || 0;
+      const qualCountB = b.food.qualifier?.length || 0;
+      if (qualCountA !== qualCountB) return qualCountA - qualCountB;
+
+      // 4. Öncelik: İsim Sadelik Önceliği (Name Complexity)
+      // "Yoğurt" (1 kelime) > "Yeşil Mercimek" (2 kelime). Temel ürünler önce gelir.
+      const nameWordsA = a.food.name.split(/\s+/).length;
+      const nameWordsB = b.food.name.split(/\s+/).length;
+      if (nameWordsA !== nameWordsB) return nameWordsA - nameWordsB;
+
+      // 4. Öncelik: Veritabanındaki Marka Önceliği (brand_priority)
+      const brandPriA = a.food.brand_priority ?? 99999;
+      const brandPriB = b.food.brand_priority ?? 99999;
+      if (brandPriA !== brandPriB) return brandPriA - brandPriB;
+
+      // 5. Öncelik: Veritabanındaki Belirteç Önceliği (qualifier_score)
+      const qualPriA = a.food.qualifier_score ?? 99999;
+      const qualPriB = b.food.qualifier_score ?? 99999;
+      if (qualPriA !== qualPriB) return qualPriA - qualPriB;
+
+      // TIEBREAKER: Aynı skorda olanlar için etiket uzunluğuna bak (Kısa olan her zaman daha isabetlidir)
+      return a._label.length - b._label.length;
+    });
+
+    return [...matchingHistory, ...sortedResults].slice(0, isMobile ? 10 : 7);
+  }, [query, results, recentSearches, isMobile]);
+
   return (
     <>
       <SearchOverlay
@@ -155,150 +391,184 @@ export default function HeroSection() {
         query={query}
         onQueryChange={setQuery}
         onClose={handleSearchClose}
-        results={results}
+        combinedItems={combinedItems}
         isLoading={showLoading}
-        recentSearches={recentSearches}
-        onRecentSelect={(term) => setQuery(term)}
         onClearHistory={clearHistory}
         onRemoveRecent={removeSearch}
         onAddSearch={addSearch}
+        buildSearchTerm={buildSearchTerm}
       />
-      <section className="flex-1 w-full flex flex-col items-center justify-center px-[3dvw] sm:px-6">
-        {/* Arama Kutusu (Çapa / Anchor) */}
-        <div className="w-full max-w-3xl relative">
-          {/* Başlık Alanı - Aramaya göre 'absolute' konumlandırıldı (Tamamen bağımsız) */}
-          <div className="absolute bottom-full left-0 right-0 mb-[10dvh] sm:mb-[10dvh] flex flex-col items-center text-center">
-            <div className="flex flex-col gap-[1.5dvh]">
-              <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight md:whitespace-nowrap">
-                Bugün hangi <br className="sm:hidden" />
-                <span className="text-emerald-600">besini</span> arıyorsun?
-              </h1>
-              <p className="text-sm sm:text-lg text-gray-500 dark:text-gray-400 px-[1dvw]">
-                Merak ettiğin besini ara, öğününe ekle.
-              </p>
-            </div>
-          </div>
 
-          {/* Arama Kutusu Input Alanı */}
-          <div
-            className={`flex items-center gap-[2dvw] sm:gap-[1dvw] bg-white dark:bg-gray-800 border rounded-full shadow-lg px-[4dvw] py-3 sm:px-5 sm:py-4 transition-all duration-300 ${
-              isDropdownOpen
-                ? "border-emerald-400 ring-2 ring-emerald-100 dark:ring-emerald-900/20 dark:border-emerald-500"
-                : "border-gray-200 dark:border-gray-800"
-            }`}
-          >
-            <Search
-              className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-colors ${isDropdownOpen ? "text-emerald-500" : "text-gray-400"}`}
-            />
-
+      <section className="flex-1 w-full flex flex-col items-center justify-center pb-[12dvh] sm:pb-[8dvh] px-[3dvw] sm:px-6">
+        <div className="w-full max-w-3xl flex flex-col items-center gap-[3dvh] sm:gap-[4dvh]">
+          <h1 className="text-4xl sm:text-5xl md:text-5xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight text-center">
+            Bugün ne <span className="text-emerald-600">yedin</span>?
+          </h1>
+          {/* Arama Barı - Her zaman rounded-full */}
+          <div className="w-full relative">
             <div
-              className="flex-1 flex"
-              onClick={() => {
-                if (typeof window !== "undefined" && window.innerWidth < 640) {
-                  setIsSearchOpen(true);
-                }
-              }}
+              className={`flex items-center gap-[2dvw] sm:gap-[1dvw] bg-white dark:bg-gray-800 shadow-lg rounded-full px-[4dvw] py-2.5 sm:px-5 sm:py-3 transition-all duration-300 ${
+                isDropdownOpen && !isMobile
+                  ? "ring-2 ring-emerald-500/20 dark:ring-emerald-500/10"
+                  : ""
+              }`}
             >
-              <input
-                ref={searchInputRef}
-                type="search"
-                enterKeyHint="search"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedIndex(-1);
-                  if (!isMobile()) setIsDropdownOpen(true);
-                }}
-                onClick={handleInputClick}
-                onFocus={handleFocus}
-                onBlur={() => {
-                  setTimeout(() => setIsDropdownOpen(false), 200);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    setIsKeyboardNav(true);
-                    setSelectedIndex((i) =>
-                      Math.min(i + 1, results.length - 1),
-                    );
-                  } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    setIsKeyboardNav(true);
-                    setSelectedIndex((i) => Math.max(i - 1, -1));
-                  } else if (e.key === "Enter") {
-                    handleSearch();
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-gray-400" />
+              <div
+                className="flex-1 flex"
+                onClick={() => {
+                  if (isMobile) {
+                    setIsSearchOpen(true);
                   }
                 }}
-                placeholder="Elma, yumurta..."
-                className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
-                {...(typeof window !== "undefined" && window.innerWidth < 640
-                  ? { readOnly: true, tabIndex: -1 }
-                  : {})}
-              />
+              >
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  enterKeyHint="search"
+                  value={query}
+                  autoComplete="off"
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setSelectedIndex(-1);
+                    if (!isMobile && e.target.value.trim())
+                      setIsDropdownOpen(true);
+                  }}
+                  onClick={() => {
+                    if (!isMobile) setIsDropdownOpen(true);
+                  }}
+                  onBlur={(e) => {
+                    // Focus dropdown içine geçtiyse kapatma
+                    const related = e.relatedTarget as HTMLElement | null;
+                    if (related?.closest("[data-dropdown]")) return;
+                    setIsDropdownOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ArrowDown") {
+                      e.preventDefault();
+                      if (!isDropdownOpen) setIsDropdownOpen(true);
+                      setIsKeyboardNav(true);
+                      setSelectedIndex((i) =>
+                        Math.min(i + 1, combinedItems.length - 1),
+                      );
+                    } else if (e.key === "ArrowUp") {
+                      e.preventDefault();
+                      setIsKeyboardNav(true);
+                      setSelectedIndex((i) => Math.max(i - 1, -1));
+                    } else if (e.key === "Enter") {
+                      handleSearch();
+                    } else if (e.key === "Escape") {
+                      setIsDropdownOpen(false);
+                    }
+                  }}
+                  placeholder="Elma, yumurta..."
+                  className="flex-1 text-sm sm:text-base text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 outline-none bg-transparent min-w-0"
+                  {...(isMobile ? { readOnly: true, tabIndex: -1 } : {})}
+                />
+              </div>
+              <Button
+                variant="third"
+                size="md"
+                onClick={handleSuggest}
+                className="!p-2"
+              >
+                <Lightbulb className="w-5 h-5 text-emerald-600" />
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                disabled={!query.trim()}
+                onMouseDown={(e: React.MouseEvent) => {
+                  e.preventDefault();
+                  handleSearch();
+                }}
+                className={`transition-opacity ${query.trim() ? "opacity-100" : "opacity-50"}`}
+              >
+                <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
+              </Button>
             </div>
 
-            <Button
-              variant="third"
-              size="md"
-              onClick={handleSuggest}
-              className="!p-2"
-            >
-              <Lightbulb className="w-5 h-5 text-emerald-600" />
-            </Button>
-
-            <Button
-              variant="primary"
-              size="md"
-              disabled={!query.trim()}
-              onMouseDown={(e: React.MouseEvent) => {
-                e.preventDefault();
-                handleSearch();
-              }}
-              className={`transition-opacity ${query.trim() ? "opacity-100" : "opacity-50"}`}
-            >
-              <SendHorizontal className="w-4 h-4 sm:w-4 sm:h-4" />
-            </Button>
+            {/* Google tarzı: Dropdown Overlay */}
+            {isDropdownOpen && !isMobile && (
+              <div
+                data-dropdown
+                className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700/50 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <DesktopDropdownContent
+                  query={query}
+                  onClose={() => setIsDropdownOpen(false)}
+                  selectedIndex={selectedIndex}
+                  onHover={(i: number) => {
+                    setIsKeyboardNav(false);
+                    setSelectedIndex(i);
+                  }}
+                  isKeyboardNav={isKeyboardNav}
+                  combinedItems={combinedItems}
+                  isLoading={showLoading}
+                  onRemoveSearch={removeSearch}
+                  onAddSearch={addSearch}
+                  buildSearchTerm={buildSearchTerm}
+                  onMouseLeave={() => setSelectedIndex(-1)}
+                />
+              </div>
+            )}
           </div>
-
-          {/* Masaüstü Dropdown */}
-          {isDropdownOpen && (
-            <DesktopDropdown
-              query={query}
-              onClose={() => setIsDropdownOpen(false)}
-              selectedIndex={selectedIndex}
-              onHover={(i) => {
-                setIsKeyboardNav(false);
-                setSelectedIndex(i);
-              }}
-              isKeyboardNav={isKeyboardNav}
-              results={results}
-              isLoading={showLoading}
-              recentSearches={recentSearches}
-              onRecentSelect={(term) => setQuery(term)}
-              onAddSearch={addSearch}
-              onRemoveSearch={removeSearch}
-              onMouseLeave={() => setSelectedIndex(-1)}
-            />
-          )}
         </div>
       </section>
     </>
   );
 }
 
+// Akıllı Vurgulama Bileşeni (Google Tarzı)
+// Aranan kelime (query) normal, geri kalanı kalın (bold)
+function HighlightedText({
+  text,
+  highlight,
+}: {
+  text: string;
+  highlight: string;
+}) {
+  if (!highlight.trim()) return <span className="font-bold">{text}</span>;
+
+  const queryWords = highlight.toLocaleLowerCase("tr").trim().split(/\s+/);
+  const textLower = text.toLocaleLowerCase("tr");
+
+  // "Tamamlayıcı Kuyruk" (Completion Tail) mantığı:
+  // Sorgunun sonuna kadar olan kısmı karartıyoruz, devamını parlak bırakıyoruz.
+  let lastMatchEnd = 0;
+
+  queryWords.forEach((qw) => {
+    // Zincirleme eşleşme kuralı gereği matches hep başta veya sıralı bulunur.
+    const pos = textLower.indexOf(qw, lastMatchEnd);
+    if (pos !== -1) {
+      lastMatchEnd = pos + qw.length;
+    }
+  });
+
+  if (lastMatchEnd === 0) return <span className="font-bold">{text}</span>;
+
+  return (
+    <>
+      <span className="font-normal opacity-70">
+        {text.substring(0, lastMatchEnd)}
+      </span>
+      <span className="font-bold">{text.substring(lastMatchEnd)}</span>
+    </>
+  );
+}
+
 // Masaüstü dropdown bileşeni
-function DesktopDropdown({
+function DesktopDropdownContent({
   query,
   onClose,
   selectedIndex,
   onHover,
   isKeyboardNav,
-  results,
+  combinedItems,
   isLoading,
-  recentSearches,
-  onRecentSelect,
   onAddSearch,
   onRemoveSearch,
+  buildSearchTerm,
   onMouseLeave,
 }: {
   query: string;
@@ -306,111 +576,84 @@ function DesktopDropdown({
   selectedIndex: number;
   onHover: (index: number) => void;
   isKeyboardNav: boolean;
-  results: Food[];
+  combinedItems: CombinedItem[];
   isLoading: boolean;
-  recentSearches: string[];
-  onRecentSelect: (term: string) => void;
   onAddSearch: (term: string) => void;
   onRemoveSearch: (term: string) => void;
+  buildSearchTerm: (food: Food, query?: string) => string;
   onMouseLeave?: () => void;
 }) {
   const navigate = useNavigate();
 
-  // Query boşsa ve geçmiş varsa, geçmiş aramaları göster
-  if (!query && recentSearches.length > 0) {
-    return (
-      <div
-        onMouseLeave={onMouseLeave}
-        className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40"
-      >
-        <div className="px-5 py-3 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Son Aramalar
-          </span>
-        </div>
-        <ul>
-          {recentSearches.map((term, index) => (
-            <li
-              key={index}
-              className="group flex items-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+  return (
+    <div
+      onMouseLeave={onMouseLeave}
+      className="bg-white dark:bg-gray-800 flex flex-col"
+    >
+      <ul className="flex flex-col">
+        {isLoading && query && (
+          <li className="px-5 py-2 text-xs text-gray-400">Aranıyor...</li>
+        )}
+
+        {combinedItems.map((item, index) => (
+          <li
+            key={item.id}
+            className={`group flex items-center transition-colors ${
+              index === selectedIndex
+                ? "bg-gray-50 dark:bg-gray-700/50"
+                : isKeyboardNav
+                  ? ""
+                  : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+            }`}
+            onMouseEnter={() => onHover(index)}
+          >
+            <button
+              onMouseDown={() => {
+                onClose();
+                if (item.type === "history") {
+                  onAddSearch(item.term);
+                  navigate(`/search?q=${encodeURIComponent(item.term)}`);
+                } else {
+                  const searchTerm = buildSearchTerm(item.food, query);
+                  onAddSearch(searchTerm);
+                  navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+                }
+              }}
+              className="flex-1 flex items-center gap-3 px-5 py-1.5 text-left min-w-0"
             >
-              <button
-                onMouseDown={() => {
-                  onRecentSelect(term);
-                }}
-                className="flex-1 flex items-center gap-3 px-5 py-3 text-left"
-              >
-                <Clock className="w-4 h-4 text-gray-400 group-hover:text-emerald-500 transition-colors shrink-0" />
-                <span className="text-sm text-gray-600 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                  {term}
-                </span>
-              </button>
+              {item.type === "history" ? (
+                <Clock className="w-3.5 h-3.5 text-gray-300 dark:text-gray-500 shrink-0" />
+              ) : (
+                <Search className="w-3.5 h-3.5 text-gray-300 dark:text-gray-500 shrink-0" />
+              )}
+              <span className="text-sm lowercase truncate text-gray-600 dark:text-gray-300">
+                {item.type === "history" ? (
+                  <HighlightedText text={item.term} highlight={query} />
+                ) : (
+                  <HighlightedText
+                    text={buildSearchTerm(item.food, query)}
+                    highlight={query}
+                  />
+                )}
+              </span>
+            </button>
+            {item.type === "history" && (
               <button
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onRemoveSearch(term);
+                  onRemoveSearch(item.term);
                 }}
-                className="p-3 text-gray-300 hover:text-red-500 transition-colors"
+                className="p-2 pr-4 text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                 title="Sil"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
-  // Query boşsa ve geçmiş yoksa bir şey gösterme (veya öneri göster)
-  if (!query) return null;
-
-  return (
-    <div
-      onMouseLeave={onMouseLeave}
-      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden z-40"
-    >
-      <ul>
-        {isLoading ? (
-          <li className="px-5 py-4 text-sm text-gray-400 text-center">
-            Aranıyor...
+            )}
           </li>
-        ) : results.length > 0 ? (
-          results.map((food, index) => (
-            <li key={food.id}>
-              <button
-                onMouseDown={() => {
-                  onClose();
-                  const parts: string[] = [];
-                  if (food.brand && food.brand !== "Genel") parts.push(food.brand);
-                  if (food.qualifier && food.qualifier.length > 0) parts.push(food.qualifier.join(" "));
-                  parts.push(food.name);
-                  const searchTerm = parts.join(" ");
-                  onAddSearch(searchTerm);
-                  navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
-                }}
-                onMouseEnter={() => onHover(index)}
-                className={`w-full flex items-center gap-4 px-5 py-4 transition-colors text-left ${
-                  index === selectedIndex
-                    ? "bg-gray-50 dark:bg-gray-700"
-                    : isKeyboardNav
-                      ? ""
-                      : "hover:bg-gray-50 dark:hover:bg-gray-700"
-                }`}
-              >
-                <Search className="w-4 h-4 text-gray-300 dark:text-gray-500 shrink-0" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
-                  {food.brand && food.brand !== "Genel" && <>{food.brand} </>}
-                  {food.qualifier && food.qualifier.length > 0 && (
-                    <>{food.qualifier.join(" ")} </>
-                  )}
-                  {food.name}
-                </span>
-              </button>
-            </li>
-          ))
-        ) : (
+        ))}
+
+        {combinedItems.length === 0 && query && !isLoading && (
           <li className="px-5 py-4 text-sm text-gray-400 text-center">
             "{query}" için sonuç bulunamadı.
           </li>

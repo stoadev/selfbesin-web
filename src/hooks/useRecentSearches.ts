@@ -17,12 +17,11 @@ export function useRecentSearches() {
   // Add a search term
   const addSearch = (term: string) => {
     if (!term.trim()) return;
+    const normalized = term.trim().toLowerCase();
 
     setRecentSearches((prev) => {
-      const filtered = prev.filter(
-        (item) => item.toLowerCase() !== term.toLowerCase(),
-      );
-      const newSearches = [term, ...filtered].slice(0, MAX_ITEMS);
+      const filtered = prev.filter((item) => item !== normalized);
+      const newSearches = [normalized, ...filtered].slice(0, MAX_ITEMS);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSearches));
       return newSearches;
     });

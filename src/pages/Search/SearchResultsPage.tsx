@@ -227,10 +227,6 @@ export default function SearchResultsPage() {
         results={results}
         isLoading={isLoading}
         recentSearches={recentSearches}
-        onRecentSelect={(term) => {
-          setIsSearchOverlayOpen(false);
-          setSearchParams({ q: term });
-        }}
         onClearHistory={clearHistory}
         onRemoveRecent={removeSearch}
         onAddSearch={addSearch}

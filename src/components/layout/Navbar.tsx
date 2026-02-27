@@ -1,60 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
-import { supabase } from "../../lib/supabase";
 import Button from "../common/Button";
 import { User } from "lucide-react";
 import AuthModal from "../common/AuthModal";
 import ProfileModal from "../common/ProfileModal";
 
 export default function Navbar() {
-  const { user } = useAuth();
+  const { user, avatarUrl } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function getProfile() {
-      if (!user) {
-        setAvatarUrl(null);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(`avatar_url`)
-          .eq("id", user.id)
-          .limit(1);
-
-        if (error) throw error;
-
-        const profile = data?.[0];
-
-        if (profile?.avatar_url && typeof profile.avatar_url === "string") {
-          if (profile.avatar_url.startsWith("http")) {
-            setAvatarUrl(profile.avatar_url);
-          } else {
-            const { data: downloadData, error: downloadError } =
-              await supabase.storage
-                .from("avatars")
-                .download(profile.avatar_url);
-            if (downloadError) throw downloadError;
-            setAvatarUrl(URL.createObjectURL(downloadData));
-          }
-        } else if (user.user_metadata?.avatar_url) {
-          setAvatarUrl(user.user_metadata.avatar_url);
-        } else if (user.user_metadata?.picture) {
-          setAvatarUrl(user.user_metadata.picture);
-        }
-      } catch (error) {
-        console.error("Error loading navbar avatar:", error);
-      }
-    }
-
-    getProfile();
-  }, [user]);
 
   return (
     <>

@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import App from "./App.tsx";
 import "./styles/globals.css";
 import { AuthProvider } from "./context/AuthContext";
+import { MealProvider } from "./context/MealContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,9 +22,11 @@ createRoot(document.getElementById("root")!).render(
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <MealProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </MealProvider>
         </AuthProvider>
       </QueryClientProvider>
     </HelmetProvider>

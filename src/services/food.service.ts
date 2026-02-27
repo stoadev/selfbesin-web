@@ -31,7 +31,7 @@ export const foodService = {
 
     try {
       const result = await index.search(q, {
-        limit: 20,
+        limit: 100, // Frontend sıralama mantığının daha iyi sonuç seçebilmesi için limiti artırdık
       });
       return result.hits.filter((f) => f.brand !== "Odd");
     } catch (err) {

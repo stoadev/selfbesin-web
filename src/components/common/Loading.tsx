@@ -4,19 +4,35 @@ interface LoadingProps {
   fullScreen?: boolean;
   className?: string;
   backdrop?: boolean;
+  delay?: number;
 }
 
 const Loading: React.FC<LoadingProps> = ({
   fullScreen = true,
   className = "",
   backdrop = true,
+  delay = 250,
 }) => {
+  const [isVisible, setIsVisible] = React.useState(delay === 0);
+
+  React.useEffect(() => {
+    if (delay === 0) return;
+
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [delay]);
+
   const spinner = (
     <div className="relative">
       <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500/20 border-t-emerald-600"></div>
       <div className="absolute inset-0 animate-ping rounded-full h-12 w-12 border-2 border-emerald-400/10"></div>
     </div>
   );
+
+  if (!isVisible) return null;
 
   if (fullScreen) {
     return (

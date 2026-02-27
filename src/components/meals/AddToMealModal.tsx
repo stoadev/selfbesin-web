@@ -3,6 +3,7 @@ import { Utensils, Check, Save } from "lucide-react";
 import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
+import { useMeals } from "../../hooks/useMeals";
 import Loading from "../common/Loading";
 import type { Food, Meal, FoodUnit } from "../../types";
 import { getBasisLabel } from "../../types";
@@ -24,6 +25,7 @@ export default function AddToMealModal({
   grams,
 }: AddToMealModalProps) {
   const { user } = useAuth();
+  const { refreshMeals } = useMeals();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -115,6 +117,7 @@ export default function AddToMealModal({
         if (insertError) throw insertError;
       }
 
+      await refreshMeals();
       await onSuccess?.();
       onClose();
     } catch (error) {
@@ -154,7 +157,8 @@ export default function AddToMealModal({
               )}
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {grams}{getBasisLabel(food).unit} •{" "}
+              {grams}
+              {getBasisLabel(food).unit} •{" "}
               <span className="text-red-500 font-bold">
                 {Math.round(food.calories_per_100g * (grams / 100))} kcal
               </span>

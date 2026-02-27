@@ -69,6 +69,20 @@ input[type="range"]::-moz-range-track {
   border-radius: 3px;
 }
 
+/* Prevent iOS Safari auto-zoom on input focus (requires font-size >= 16px) */
+@media screen and (max-width: 639px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Remove browser-native search clear button */
 input[type="search"]::-webkit-search-cancel-button,
 input[type="search"]::-webkit-search-decoration,
@@ -76,4 +90,84 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* Page Transitions */
+.page-transition {
+  animation: fade-in-standard 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fade-in-standard {
+  0% {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Shimmer Animation for Professional Skeletons */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  filter: blur(0.4px); /* Subtle blur for softness */
+  /* Kendi rengini alabilmesi için bg sildim, Skeleton bileşeninde eklenecek */
+}
+
+.dark .shimmer {
+  background-color: #1f2937; /* gray-800 */
+}
+
+.shimmer::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  --shimmer-color: rgba(255, 255, 255, 0.7);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    var(--shimmer-color) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.5s infinite;
+  animation-delay: 0.2s; /* Delayed start to prevent flicker */
+  animation-fill-mode: backwards;
+  content: "";
+}
+
+.dark .shimmer::after {
+  --shimmer-color: rgba(255, 255, 255, 0.15);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    var(--shimmer-color) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Progressive Reveal Animation */
+.reveal-content {
+  animation: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes reveal {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+  }
 }

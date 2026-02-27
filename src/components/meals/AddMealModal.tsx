@@ -3,6 +3,7 @@ import { Search, Plus, Trash2, Save, Utensils, Apple } from "lucide-react";
 import Modal from "../common/Modal";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../hooks/useAuth";
+import { useMeals } from "../../hooks/useMeals";
 import { foodService } from "../../services/food.service";
 import type { Food, MealWithFoods, FoodUnit } from "../../types";
 import { getBasisLabel } from "../../types";
@@ -33,6 +34,7 @@ function AddMealModalContent({
   mealToEdit?: MealWithFoods | null;
 }) {
   const { user } = useAuth();
+  const { refreshMeals } = useMeals();
   const [mealName, setMealName] = useState(mealToEdit?.name || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Food[]>([]);
@@ -169,6 +171,7 @@ function AddMealModalContent({
         if (foodsError) throw foodsError;
       }
 
+      await refreshMeals();
       await onSuccess();
       onClose();
     } catch (error) {
@@ -194,6 +197,7 @@ function AddMealModalContent({
 
       if (error) throw error;
 
+      await refreshMeals();
       onSuccess();
       onClose();
     } catch (error) {
@@ -370,7 +374,8 @@ function AddMealModalContent({
                       );
                       return hasUnit ? (
                         <span className="text-[9px] font-bold text-gray-400 ml-1">
-                          ({sf.grams}{getBasisLabel(sf.food).unit})
+                          ({sf.grams}
+                          {getBasisLabel(sf.food).unit})
                         </span>
                       ) : null;
                     })()}

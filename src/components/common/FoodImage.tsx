@@ -43,7 +43,7 @@ export default function FoodImage({
         alt={alt}
         loading="lazy"
         decoding="async"
-        className={`w-full h-full object-cover transition-opacity duration-300 ${
+        className={`w-full h-full object-contain transition-opacity duration-300 ${
           isLoading ? "opacity-0" : "opacity-100"
         }`}
         onLoad={() => setIsLoading(false)}

@@ -163,7 +163,7 @@ export default function FoodDetailPage() {
   };
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900">
+    <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900 max-w-xl md:max-w-5xl mx-auto w-full">
       <Helmet>
         <title>
           {food.name}
@@ -234,23 +234,28 @@ export default function FoodDetailPage() {
       </div>
 
       {/* Ana İçerik Alanı - Esnek Alan */}
-      <div className="flex-1 flex flex-col px-5 py-[3dvh] overflow-y-auto">
-        {/* Hero Görsel Kartı */}
-        <div
-          onClick={() => food.image_url && setIsZoomed(true)}
-          className={`w-full mx-auto h-[30dvh] rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative shrink-0 ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
-        >
-          <FoodImage
-            src={food.image_url}
-            alt={food.name}
-            className="w-full h-full"
-            iconClassName="w-12 h-12"
-          />
-          {food.image_url && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-          )}
+      <div className="flex-1 flex flex-col md:flex-row px-5 py-[3dvh] overflow-y-auto md:gap-8">
+        {/* Sol Kolon - Görsel */}
+        <div className="md:w-1/2 shrink-0">
+          {/* Hero Görsel Kartı */}
+          <div
+            onClick={() => food.image_url && setIsZoomed(true)}
+            className={`w-full mx-auto h-[30dvh] md:h-[70dvh] rounded-3xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-500/10 dark:to-emerald-500/5 border border-emerald-100/30 dark:border-emerald-500/10 shadow-sm overflow-hidden flex items-center justify-center relative shrink-0 ${food.image_url ? "cursor-zoom-in active:scale-[0.98] transition-transform" : ""}`}
+          >
+            <FoodImage
+              src={food.image_url}
+              alt={food.name}
+              className="w-full h-full"
+              iconClassName="w-12 h-12"
+            />
+            {food.image_url && (
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-60 pointer-events-none" />
+            )}
+          </div>
         </div>
 
+        {/* Sağ Kolon - Kontroller + Makrolar */}
+        <div className="md:w-1/2 flex flex-col flex-1">
         {/* Porsiyon seçici - %25 civarı pay */}
         <div className="mt-auto flex flex-col gap-[2dvh]">
           <div className="flex items-center justify-between">
@@ -378,10 +383,43 @@ export default function FoodDetailPage() {
             bg="bg-orange-50 dark:bg-orange-950/30"
           />
         </div>
+
+        {/* Butonlar - masaüstünde inline */}
+        <div className="hidden md:block mt-auto pt-4">
+          {user ? (
+            <div className="flex gap-3">
+              <Button
+                variant={isAdded ? "secondary" : "cta"}
+                className="flex-1 h-12"
+                onClick={() => setIsAddModalOpen(true)}
+                disabled={serving <= 0}
+              >
+                {isAdded ? "Öğüne Eklendi!" : "Öğününe Ekle"}
+              </Button>
+              <Button
+                variant={isAdded ? "cta" : "secondary"}
+                className="flex-1 h-12"
+                to="/meals"
+              >
+                Öğünlerime Dön
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="primary"
+              className="w-full h-12"
+              onClick={() => setIsAuthModalOpen(true)}
+              disabled={serving <= 0}
+            >
+              Giriş Yap
+            </Button>
+          )}
+        </div>
+        </div>{/* Sağ kolon sonu */}
       </div>
 
-      {/* Sabit Alt Bar - %10 pay */}
-      <div className="h-[calc(8dvh+env(safe-area-inset-bottom))] flex items-center bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shrink-0">
+      {/* Sabit Alt Bar - sadece mobil */}
+      <div className="md:hidden h-[calc(8dvh+env(safe-area-inset-bottom))] flex items-center bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 pb-[env(safe-area-inset-bottom)] shrink-0">
         <div className="w-full max-w-lg mx-auto px-5">
           {user ? (
             <div className="flex gap-3">
