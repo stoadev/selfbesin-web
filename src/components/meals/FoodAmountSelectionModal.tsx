@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+﻿import { useState, useMemo, useRef } from "react";
 import { Flame, Beef, Wheat, Droplets } from "lucide-react";
 import Modal from "../common/Modal";
 import type { Food, FoodUnit } from "../../types";
@@ -8,10 +8,11 @@ import Button from "../common/Button";
 type FoodAmountSelectionModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (grams: number) => void;
+  onConfirm: (grams: number) => void | Promise<void>;
   food: Food | null;
   initialGrams?: number;
   onDelete?: () => void;
+  confirmLabel?: string;
 };
 
 export default function FoodAmountSelectionModal({
@@ -21,24 +22,31 @@ export default function FoodAmountSelectionModal({
   food,
   initialGrams,
   onDelete,
+  confirmLabel,
 }: FoodAmountSelectionModalProps) {
+  // Cache food so it's available during close animation
+  const foodRef = useRef<Food | null>(food);
+  if (food) foodRef.current = food;
+  const displayFood = food || foodRef.current;
+
   const [serving, setServing] = useState(initialGrams || 100);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Birimleri hazırla
   const units = useMemo(() => {
     let u: FoodUnit[] = [];
     try {
-      u = Array.isArray(food?.serving_units)
-        ? food.serving_units
-        : typeof food?.serving_units === "string"
-          ? JSON.parse(food.serving_units)
+      u = Array.isArray(displayFood?.serving_units)
+        ? displayFood.serving_units
+        : typeof displayFood?.serving_units === "string"
+          ? JSON.parse(displayFood.serving_units)
           : [];
     } catch (e) {
       console.error("Scale parsing error:", e);
       u = [];
     }
     return u;
-  }, [food]);
+  }, [displayFood]);
 
   // Önce tam eşleşen (initialGrams) veya 100 gram olan bir birim var mı diye bak
   const matchingUnit =
@@ -54,9 +62,9 @@ export default function FoodAmountSelectionModal({
     grams: number;
   } | null>(matchingUnit || (units.length > 0 ? units[0] : null));
 
-  if (!food) return null;
+  if (!displayFood) return null;
 
-  const { unit, unitLabel, quantityLabel } = getBasisLabel(food);
+  const { unit, unitLabel, quantityLabel } = getBasisLabel(displayFood);
   const ratio = serving / 100;
   const calc = (val: number) => (val * ratio).toFixed(1);
 
@@ -78,16 +86,16 @@ export default function FoodAmountSelectionModal({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-              {food.name}
-              {food.qualifier && food.qualifier.length > 0 && (
+              {displayFood.name}
+              {displayFood.qualifier && displayFood.qualifier.length > 0 && (
                 <span className="text-gray-500 dark:text-gray-400 font-normal ml-1 text-sm">
-                  {food.qualifier.join(" ")}
+                  {displayFood.qualifier.join(" ")}
                 </span>
               )}
             </h2>
-            {food.brand && food.brand !== "Genel" && (
+            {displayFood.brand && displayFood.brand !== "Genel" && (
               <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-[10px] font-medium text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                {food.brand}
+                {displayFood.brand}
               </span>
             )}
           </div>
@@ -192,28 +200,28 @@ export default function FoodAmountSelectionModal({
           <MacroCard
             icon={<Flame className="w-4 h-4 text-red-500" />}
             label="Kalori"
-            value={calc(food.calories_per_100g)}
+            value={calc(displayFood.calories_per_100g)}
             unit="kcal"
             bg="bg-red-50 dark:bg-red-950/20"
           />
           <MacroCard
             icon={<Beef className="w-4 h-4 text-blue-500" />}
             label="Protein"
-            value={calc(food.protein_g_per_100g)}
+            value={calc(displayFood.protein_g_per_100g)}
             unit="g Prot"
             bg="bg-blue-50 dark:bg-blue-950/20"
           />
           <MacroCard
             icon={<Wheat className="w-4 h-4 text-yellow-500" />}
             label="Karb."
-            value={calc(food.carbs_g_per_100g)}
+            value={calc(displayFood.carbs_g_per_100g)}
             unit="g Karb"
             bg="bg-yellow-50 dark:bg-yellow-950/20"
           />
           <MacroCard
             icon={<Droplets className="w-4 h-4 text-orange-500" />}
             label="Yağ"
-            value={calc(food.fat_g_per_100g)}
+            value={calc(displayFood.fat_g_per_100g)}
             unit="g Yağ"
             bg="bg-orange-50 dark:bg-orange-950/20"
           />
@@ -238,12 +246,20 @@ export default function FoodAmountSelectionModal({
             variant="primary"
             className="flex-[2] h-[6dvh] min-h-[44px] shadow-lg shadow-emerald-500/20"
             disabled={serving <= 0}
-            onClick={() => {
-              onConfirm(serving);
-              onClose();
+            loading={isSubmitting}
+            onClick={async () => {
+              setIsSubmitting(true);
+              try {
+                await onConfirm(serving);
+                onClose();
+              } catch {
+                // error handled by caller
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
           >
-            {initialGrams ? "Güncelle" : "Öğüne Ekle"}
+            {confirmLabel || (initialGrams ? "Güncelle" : "Öğüne Ekle")}
           </Button>
         </div>
       </div>

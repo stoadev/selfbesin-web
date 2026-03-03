@@ -1,4 +1,4 @@
-import { Utensils, Edit2 } from "lucide-react";
+import { Utensils, Plus, Edit2, X } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
 import FoodImage from "../common/FoodImage";
@@ -10,6 +10,7 @@ type MealViewModalProps = {
   onClose: () => void;
   meal: MealWithFoods | null;
   onEdit: () => void;
+  onAddFood: () => void;
   onFoodClick?: (mealFood: MealFood) => void;
 };
 
@@ -18,6 +19,7 @@ export default function MealViewModal({
   onClose,
   meal,
   onEdit,
+  onAddFood,
   onFoodClick,
 }: MealViewModalProps) {
   if (!meal) return null;
@@ -38,15 +40,29 @@ export default function MealViewModal({
       onClose={onClose}
       maxWidth="max-w-[480px]"
       maxHeight="h-[80dvh] sm:h-[600px]"
-      showCloseButton={true}
+      showCloseButton={false}
     >
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="p-[3dvh] border-b border-gray-100 dark:border-gray-800 shrink-0">
+        <div className="p-[3dvh] border-b border-gray-100 dark:border-gray-800 shrink-0 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Utensils className="w-5 h-5 text-emerald-500" />
             {meal.name}
           </h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onEdit}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Food List */}
@@ -184,13 +200,13 @@ export default function MealViewModal({
               </div>
             </div>
 
-            {/* Edit Button CTA */}
+            {/* Add Food Button */}
             <Button
               variant="cta"
               className="w-12 h-12 p-0 rounded-full flex items-center justify-center shrink-0 shadow-lg"
-              onClick={onEdit}
+              onClick={onAddFood}
             >
-              <Edit2 className="w-5 h-5" />
+              <Plus className="w-5 h-5" />
             </Button>
           </div>
         </div>

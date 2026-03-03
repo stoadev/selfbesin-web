@@ -19,6 +19,7 @@ import { supabase } from "../../lib/supabase";
 import Button from "../../components/common/Button";
 import AddMealModal from "../../components/meals/AddMealModal";
 import MealViewModal from "../../components/meals/MealViewModal";
+import AddFoodSearchModal from "../../components/meals/AddFoodSearchModal";
 import FoodAmountSelectionModal from "../../components/meals/FoodAmountSelectionModal";
 import ConfirmModal from "../../components/common/ConfirmModal";
 import type { MealWithFoods, Food, MealFood } from "../../types";
@@ -35,6 +36,8 @@ export default function MealsPage() {
   const [editingMealFoodId, setEditingMealFoodId] = useState<string | null>(
     null,
   );
+  const [isAddFoodSearchOpen, setIsAddFoodSearchOpen] = useState(false);
+  const [foodToAdd, setFoodToAdd] = useState<Food | null>(null);
 
   // Custom Confirm Modal State
   const [confirmModal, setConfirmModal] = useState<{
@@ -89,7 +92,6 @@ export default function MealsPage() {
   const handleUpdateMealFoodGrams = async (grams: number) => {
     if (!editingMealFoodId || !foodToEditAmount) return;
 
-    setIsMutating(true);
     try {
       const factor = grams / 100;
       const { error } = await supabase
@@ -114,10 +116,7 @@ export default function MealsPage() {
     } catch (error) {
       console.error("Error updating food grams:", error);
       alert("Miktar güncellenirken bir hata oluştu.");
-    } finally {
-      setIsMutating(false);
-      setEditingMealFoodId(null);
-      setFoodToEditAmount(null);
+      throw error;
     }
   };
 
@@ -158,6 +157,65 @@ export default function MealsPage() {
         }
       },
     });
+  };
+
+  const handleAddFoodToMeal = async (grams: number) => {
+    if (!foodToAdd || !selectedMeal) return;
+
+    try {
+      // Check if food already exists in meal
+      const { data: existingEntry, error: fetchError } = await supabase
+        .from("meal_foods")
+        .select("*")
+        .eq("meal_id", selectedMeal.id)
+        .eq("food_id", foodToAdd.id)
+        .single();
+
+      if (fetchError && fetchError.code !== "PGRST116") throw fetchError;
+
+      if (existingEntry) {
+        const newGrams = existingEntry.grams + grams;
+        const factor = newGrams / 100;
+
+        const { error: updateError } = await supabase
+          .from("meal_foods")
+          .update({
+            grams: newGrams,
+            calories: foodToAdd.calories_per_100g * factor,
+            protein: foodToAdd.protein_g_per_100g * factor,
+            carbs: foodToAdd.carbs_g_per_100g * factor,
+            fat: foodToAdd.fat_g_per_100g * factor,
+          })
+          .eq("id", existingEntry.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const factor = grams / 100;
+        const { error: insertError } = await supabase
+          .from("meal_foods")
+          .insert([
+            {
+              meal_id: selectedMeal.id,
+              food_id: foodToAdd.id,
+              grams,
+              calories: foodToAdd.calories_per_100g * factor,
+              protein: foodToAdd.protein_g_per_100g * factor,
+              carbs: foodToAdd.carbs_g_per_100g * factor,
+              fat: foodToAdd.fat_g_per_100g * factor,
+            },
+          ]);
+
+        if (insertError) throw insertError;
+      }
+
+      const updatedMeals = await refreshMeals();
+      const found = updatedMeals.find((m) => m.id === selectedMeal.id);
+      if (found) setSelectedMeal(found);
+    } catch (error) {
+      console.error("Error adding food to meal:", error);
+      alert("Besin eklenirken bir hata oluştu.");
+      throw error;
+    }
   };
 
   const handleDeleteMeal = async (mealId: string) => {
@@ -549,7 +607,17 @@ export default function MealsPage() {
             setIsModalOpen(true);
           }
         }}
+        onAddFood={() => setIsAddFoodSearchOpen(true)}
         onFoodClick={handleFoodClickFromView}
+      />
+
+      <AddFoodSearchModal
+        isOpen={isAddFoodSearchOpen}
+        onClose={() => setIsAddFoodSearchOpen(false)}
+        onFoodSelect={(food) => {
+          setFoodToAdd(food);
+          setIsAddFoodSearchOpen(false);
+        }}
       />
 
       <FoodAmountSelectionModal
@@ -570,6 +638,15 @@ export default function MealsPage() {
           selectedMeal?.meal_foods.find((mf) => mf.id === editingMealFoodId)
             ?.grams
         }
+      />
+
+      <FoodAmountSelectionModal
+        key={foodToAdd ? `add-${foodToAdd.id}` : "add-none"}
+        isOpen={!!foodToAdd}
+        onClose={() => setFoodToAdd(null)}
+        food={foodToAdd}
+        onConfirm={handleAddFoodToMeal}
+        confirmLabel="Öğüne Ekle"
       />
 
       <ConfirmModal
