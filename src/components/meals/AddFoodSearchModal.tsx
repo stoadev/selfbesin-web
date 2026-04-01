@@ -4,6 +4,8 @@ import Modal from "../common/Modal";
 import { foodService } from "../../services/food.service";
 import { useDebounce } from "../../hooks/useDebounce";
 import type { Food } from "../../types";
+import HighlightedText from "../common/HighlightedText";
+import { buildSearchTerm } from "../../utils/searchUtils";
 
 type CombinedItem = { type: "result"; food: Food; id: string; _label: string };
 
@@ -12,113 +14,6 @@ type AddFoodSearchModalProps = {
   onClose: () => void;
   onFoodSelect: (food: Food) => void;
 };
-
-function HighlightedText({
-  text,
-  highlight,
-}: {
-  text: string;
-  highlight: string;
-}) {
-  if (!highlight.trim()) return <span className="font-bold">{text}</span>;
-
-  const queryWords = highlight.toLocaleLowerCase("tr").trim().split(/\s+/);
-  const textLower = text.toLocaleLowerCase("tr");
-
-  let lastMatchEnd = 0;
-
-  queryWords.forEach((qw) => {
-    const pos = textLower.indexOf(qw, lastMatchEnd);
-    if (pos !== -1) {
-      lastMatchEnd = pos + qw.length;
-    }
-  });
-
-  if (lastMatchEnd === 0) return <span className="font-bold">{text}</span>;
-
-  return (
-    <>
-      <span className="font-normal opacity-70">
-        {text.substring(0, lastMatchEnd)}
-      </span>
-      <span className="font-bold">{text.substring(lastMatchEnd)}</span>
-    </>
-  );
-}
-
-function buildSearchTerm(food: Food, currentQuery?: string): string {
-  const brand = food.brand && food.brand !== "Genel" ? food.brand : "";
-  const name = food.name;
-
-  const components: { type: string; val: string }[] = [];
-  if (brand) components.push({ type: "brand", val: brand });
-  if (food.qualifier && food.qualifier.length > 0) {
-    food.qualifier.forEach((q) => {
-      components.push({ type: "qualifier", val: q });
-    });
-  }
-  components.push({ type: "name", val: name });
-
-  if (currentQuery && currentQuery.trim()) {
-    const q = currentQuery.toLocaleLowerCase("tr").trim();
-    const queryWords = q.split(/\s+/);
-
-    const matchedGroup: { type: string; val: string; matchIdx: number }[] = [];
-    const unmatchedGroup: { type: string; val: string }[] = [];
-
-    const priorityOrder: Record<string, number> = {
-      name: 1,
-      brand: 2,
-      qualifier: 3,
-    };
-    const sortedComponents = [...components].sort(
-      (a, b) => (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99),
-    );
-    const usedQueryIndices = new Set<number>();
-
-    sortedComponents.forEach((c) => {
-      const valLower = c.val.toLocaleLowerCase("tr");
-      const valWords = valLower.split(/\s+/);
-
-      let firstMatchIdx = -1;
-      for (let i = 0; i < queryWords.length; i++) {
-        if (usedQueryIndices.has(i)) continue;
-        const qw = queryWords[i];
-        const isMatch =
-          valWords.includes(qw) ||
-          (qw.length <= 2 && valWords.some((vw) => vw.startsWith(qw)));
-        if (isMatch) {
-          firstMatchIdx = i;
-          break;
-        }
-      }
-
-      if (firstMatchIdx !== -1) {
-        usedQueryIndices.add(firstMatchIdx);
-        matchedGroup.push({ ...c, matchIdx: firstMatchIdx });
-      } else {
-        unmatchedGroup.push(c);
-      }
-    });
-
-    matchedGroup.sort((a, b) => {
-      if (a.matchIdx !== b.matchIdx) return a.matchIdx - b.matchIdx;
-      const priority: Record<string, number> = {
-        name: 1,
-        brand: 2,
-        qualifier: 3,
-      };
-      return (priority[a.type] || 99) - (priority[b.type] || 99);
-    });
-
-    return [
-      ...matchedGroup.map((m) => m.val),
-      ...unmatchedGroup.map((u) => u.val),
-    ].join(" ");
-  }
-
-  return components.map((c) => c.val).join(" ");
-}
 
 export default function AddFoodSearchModal({
   isOpen,

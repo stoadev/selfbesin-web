@@ -4,6 +4,7 @@ import Footer from "./Footer";
 import { useAuth } from "../../hooks/useAuth";
 import { Utensils, Search } from "lucide-react";
 import Button from "../common/Button";
+import ChatBot from "../common/ChatBot";
 
 type PageLayoutProps = {
   showFooter?: boolean;
@@ -41,6 +42,8 @@ export default function PageLayout({
         <Outlet />
       </main>
       {showFooter && !isDetailsPage && <Footer />}
+
+      {user && !isDetailsPage && <ChatBot />}
 
       {user && !isDetailsPage && (
         <Button

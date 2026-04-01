@@ -3,6 +3,7 @@ import { Search, X, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { Food } from "../../types";
 import type { CombinedItem } from "../../pages/Landing/HeroSection";
+import HighlightedText from "./HighlightedText";
 
 type SearchOverlayProps = {
   isOpen: boolean;
@@ -16,40 +17,6 @@ type SearchOverlayProps = {
   onAddSearch?: (term: string) => void;
   buildSearchTerm: (food: Food, query?: string) => string;
 };
-
-// Akıllı Vurgulama (Google Tarzı) — Yazılan kısım silik, tamamlanan kısım kalın
-function HighlightedText({
-  text,
-  highlight,
-}: {
-  text: string;
-  highlight: string;
-}) {
-  if (!highlight.trim()) return <span className="font-bold">{text}</span>;
-
-  const queryWords = highlight.toLocaleLowerCase("tr").trim().split(/\s+/);
-  const textLower = text.toLocaleLowerCase("tr");
-
-  let lastMatchEnd = 0;
-
-  queryWords.forEach((qw) => {
-    const pos = textLower.indexOf(qw, lastMatchEnd);
-    if (pos !== -1) {
-      lastMatchEnd = pos + qw.length;
-    }
-  });
-
-  if (lastMatchEnd === 0) return <span className="font-bold">{text}</span>;
-
-  return (
-    <>
-      <span className="font-normal opacity-70">
-        {text.substring(0, lastMatchEnd)}
-      </span>
-      <span className="font-bold">{text.substring(lastMatchEnd)}</span>
-    </>
-  );
-}
 
 export default function SearchOverlay({
   isOpen,

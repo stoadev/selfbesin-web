@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { Mail, Lock, ArrowRight, Github } from "lucide-react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Modal from "./Modal";
 import { supabase } from "../../lib/supabase";
-import { loginSchema, type LoginSchema } from "../../utils/validation";
+
+const loginSchema = z.object({
+  email: z.string().email("Geçerli bir e-posta adresi giriniz"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
+});
+
+type LoginSchema = z.infer<typeof loginSchema>;
 
 type AuthModalProps = {
   isOpen: boolean;

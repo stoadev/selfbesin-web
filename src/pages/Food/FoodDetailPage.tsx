@@ -11,6 +11,7 @@ import AddToMealModal from "../../components/meals/AddToMealModal";
 import Loading from "../../components/common/Loading";
 import { useAuth } from "../../hooks/useAuth";
 import FoodImage from "../../components/common/FoodImage";
+import { getSliderTrackColor } from "../../utils/themeUtils";
 
 export default function FoodDetailPage() {
   const { user } = useAuth();
@@ -300,9 +301,9 @@ export default function FoodDetailPage() {
               style={{
                 background: `linear-gradient(to right, #10b981 0%, #10b981 ${
                   ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
-                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} ${
+                }%, ${getSliderTrackColor()} ${
                   ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
-                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} 100%)`,
+                }%, ${getSliderTrackColor()} 100%)`,
               }}
             />
 

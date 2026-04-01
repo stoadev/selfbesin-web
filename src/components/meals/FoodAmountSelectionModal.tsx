@@ -4,6 +4,7 @@ import Modal from "../common/Modal";
 import type { Food, FoodUnit } from "../../types";
 import { getBasisLabel } from "../../types";
 import Button from "../common/Button";
+import { getSliderTrackColor } from "../../utils/themeUtils";
 
 type FoodAmountSelectionModalProps = {
   isOpen: boolean;
@@ -145,9 +146,9 @@ export default function FoodAmountSelectionModal({
               style={{
                 background: `linear-gradient(to right, #10b981 0%, #10b981 ${
                   ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
-                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} ${
+                }%, ${getSliderTrackColor()} ${
                   ((sliderValue - sliderMin) / (sliderMax - sliderMin)) * 100
-                }%, ${localStorage.getItem("theme") === "dark" ? "#374151" : "#e5e7eb"} 100%)`,
+                }%, ${getSliderTrackColor()} 100%)`,
               }}
             />
 

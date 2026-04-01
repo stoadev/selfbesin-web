@@ -7,6 +7,8 @@ import { foodService } from "../../services/food.service";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 import type { Food } from "../../types";
+import HighlightedText from "../../components/common/HighlightedText";
+import { buildSearchTerm } from "../../utils/searchUtils";
 
 export type CombinedItem =
   | { type: "history"; term: string; id: string }
@@ -111,87 +113,6 @@ export default function HeroSection() {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  function buildSearchTerm(food: Food, currentQuery?: string): string {
-    const brand = food.brand && food.brand !== "Genel" ? food.brand : "";
-    const name = food.name;
-
-    // Her bir belirteci ayrı bir parça olarak hiyerarşiye ekleyelim (Granüler kontrol için)
-    const components: { type: string; val: string }[] = [];
-    if (brand) components.push({ type: "brand", val: brand });
-    if (food.qualifier && food.qualifier.length > 0) {
-      food.qualifier.forEach((q) => {
-        components.push({ type: "qualifier", val: q });
-      });
-    }
-    components.push({ type: "name", val: name });
-
-    if (currentQuery && currentQuery.trim()) {
-      const q = currentQuery.toLocaleLowerCase("tr").trim();
-      const queryWords = q.split(/\s+/);
-
-      const matchedGroup: { type: string; val: string; matchIdx: number }[] =
-        [];
-      const unmatchedGroup: { type: string; val: string }[] = [];
-
-      // Öncelik sırasına göre işle: name → brand → qualifier
-      // Bir sorgu kelimesi isimle eşleştiyse, aynı kelime belirteçi tekrar çekmez.
-      const priorityOrder: Record<string, number> = {
-        name: 1,
-        brand: 2,
-        qualifier: 3,
-      };
-      const sortedComponents = [...components].sort(
-        (a, b) => (priorityOrder[a.type] || 99) - (priorityOrder[b.type] || 99),
-      );
-      const usedQueryIndices = new Set<number>();
-
-      sortedComponents.forEach((c) => {
-        const valLower = c.val.toLocaleLowerCase("tr");
-        const valWords = valLower.split(/\s+/);
-
-        let firstMatchIdx = -1;
-        for (let i = 0; i < queryWords.length; i++) {
-          if (usedQueryIndices.has(i)) continue; // Bu kelime zaten eşleşti
-          const qw = queryWords[i];
-          // "Güçlü" eşleşme: Tam kelime veya kısa sorgularda prefix
-          const isMatch =
-            valWords.includes(qw) ||
-            (qw.length <= 2 && valWords.some((vw) => vw.startsWith(qw)));
-          if (isMatch) {
-            firstMatchIdx = i;
-            break;
-          }
-        }
-
-        if (firstMatchIdx !== -1) {
-          usedQueryIndices.add(firstMatchIdx);
-          matchedGroup.push({ ...c, matchIdx: firstMatchIdx });
-        } else {
-          unmatchedGroup.push(c);
-        }
-      });
-
-      // Eşleşenleri senin yazdığın kelime sırasına göre diz
-      matchedGroup.sort((a, b) => {
-        if (a.matchIdx !== b.matchIdx) return a.matchIdx - b.matchIdx;
-        const priority: Record<string, number> = {
-          name: 1,
-          brand: 2,
-          qualifier: 3,
-        };
-        return (priority[a.type] || 99) - (priority[b.type] || 99);
-      });
-
-      return [
-        ...matchedGroup.map((m) => m.val),
-        ...unmatchedGroup.map((u) => u.val),
-      ].join(" ");
-    }
-
-    // Arama yoksa standart hiyerarşiyi döndür
-    return components.map((c) => c.val).join(" ");
   }
 
   function handleSearch() {
@@ -515,44 +436,6 @@ export default function HeroSection() {
           </div>
         </div>
       </section>
-    </>
-  );
-}
-
-// Akıllı Vurgulama Bileşeni (Google Tarzı)
-// Aranan kelime (query) normal, geri kalanı kalın (bold)
-function HighlightedText({
-  text,
-  highlight,
-}: {
-  text: string;
-  highlight: string;
-}) {
-  if (!highlight.trim()) return <span className="font-bold">{text}</span>;
-
-  const queryWords = highlight.toLocaleLowerCase("tr").trim().split(/\s+/);
-  const textLower = text.toLocaleLowerCase("tr");
-
-  // "Tamamlayıcı Kuyruk" (Completion Tail) mantığı:
-  // Sorgunun sonuna kadar olan kısmı karartıyoruz, devamını parlak bırakıyoruz.
-  let lastMatchEnd = 0;
-
-  queryWords.forEach((qw) => {
-    // Zincirleme eşleşme kuralı gereği matches hep başta veya sıralı bulunur.
-    const pos = textLower.indexOf(qw, lastMatchEnd);
-    if (pos !== -1) {
-      lastMatchEnd = pos + qw.length;
-    }
-  });
-
-  if (lastMatchEnd === 0) return <span className="font-bold">{text}</span>;
-
-  return (
-    <>
-      <span className="font-normal opacity-70">
-        {text.substring(0, lastMatchEnd)}
-      </span>
-      <span className="font-bold">{text.substring(lastMatchEnd)}</span>
     </>
   );
 }
