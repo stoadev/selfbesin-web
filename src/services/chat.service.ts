@@ -16,6 +16,7 @@ export const chatService = {
     message: string,
     history: ChatMessage[],
     userId: string,
+    meals: { id: string; name: string }[] = [],
   ): Promise<ChatResponse> {
     const webhookUrl = import.meta.env.VITE_CHATBOT_WEBHOOK_URL;
 
@@ -23,14 +24,13 @@ export const chatService = {
       throw new Error("Chatbot webhook URL not configured.");
     }
 
+    const payload = { message, history: history.slice(-10), userId, meals };
+    console.log("ChatBot payload:", JSON.stringify(payload, null, 2));
+
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message,
-        history: history.slice(-10), // son 10 mesajı gönder
-        userId,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {

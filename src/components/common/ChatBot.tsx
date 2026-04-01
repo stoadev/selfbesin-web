@@ -28,7 +28,7 @@ function saveMessages(msgs: ChatMessage[]) {
 
 export default function ChatBot() {
   const { user } = useAuth();
-  const { refreshMeals } = useMeals();
+  const { refreshMeals, meals } = useMeals();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [input, setInput] = useState("");
@@ -66,6 +66,7 @@ export default function ChatBot() {
         text,
         messages,
         user.id,
+        meals.map((m) => ({ id: m.id, name: m.name })),
       );
 
       setMessages((prev) => [
@@ -73,13 +74,7 @@ export default function ChatBot() {
         { role: "assistant", content: response.reply },
       ]);
 
-      // Eğer öğün ekleme aksiyonu geldiyse meal context'i yenile
-      if (
-        response.action?.type === "food_added" ||
-        response.action?.type === "meal_created"
-      ) {
-        refreshMeals();
-      }
+      refreshMeals();
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -141,7 +136,7 @@ export default function ChatBot() {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
+                  className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     msg.role === "user"
                       ? "bg-emerald-600 text-white rounded-br-md"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md"
@@ -172,7 +167,6 @@ export default function ChatBot() {
                 onKeyDown={handleKeyDown}
                 placeholder="Mesajinizi yazin..."
                 className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm outline-none focus:ring-2 focus:ring-emerald-500/50 placeholder:text-gray-400"
-                disabled={loading}
               />
               <button
                 onClick={handleSend}
