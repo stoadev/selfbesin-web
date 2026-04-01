@@ -1,20 +1,36 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Send, Bot, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { chatService, type ChatMessage } from "../../services/chat.service";
 import { useAuth } from "../../hooks/useAuth";
 import { useMeals } from "../../hooks/useMeals";
+
+const STORAGE_KEY = "chatbot_messages";
+const MAX_MESSAGES = 20;
+const INITIAL_MESSAGE: ChatMessage = {
+  role: "assistant",
+  content:
+    "Merhaba! Ben Selfbesin asistaniyim. Ogun eklemek, besin aramak veya beslenme hakkinda sorular sormak icin bana yazabilirsin.",
+};
+
+function loadMessages(): ChatMessage[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return [INITIAL_MESSAGE];
+}
+
+function saveMessages(msgs: ChatMessage[]) {
+  const trimmed = msgs.slice(-MAX_MESSAGES);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
+}
 
 export default function ChatBot() {
   const { user } = useAuth();
   const { refreshMeals } = useMeals();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Merhaba! Ben Selfbesin asistaniyim. Ogun eklemek, besin aramak veya beslenme hakkinda sorular sormak icin bana yazabilirsin.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(loadMessages);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -27,6 +43,10 @@ export default function ChatBot() {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    saveMessages(messages);
+  }, [messages]);
 
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
@@ -127,7 +147,7 @@ export default function ChatBot() {
                       : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 rounded-bl-md"
                   }`}
                 >
-                  {msg.content}
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               </div>
             ))}
