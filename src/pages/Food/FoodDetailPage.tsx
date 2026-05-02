@@ -395,7 +395,7 @@ export default function FoodDetailPage() {
                 onClick={() => setIsAddModalOpen(true)}
                 disabled={serving <= 0}
               >
-                {isAdded ? "Öğüne Eklendi!" : "Öğününe Ekle"}
+                {isAdded ? "Öğüne Eklendi!" : "Öğüne Ekle"}
               </Button>
               <Button
                 variant={isAdded ? "cta" : "secondary"}
@@ -430,7 +430,7 @@ export default function FoodDetailPage() {
                 onClick={() => setIsAddModalOpen(true)}
                 disabled={serving <= 0}
               >
-                {isAdded ? "Öğüne Eklendi!" : "Öğününe Ekle"}
+                {isAdded ? "Öğüne Eklendi!" : "Öğüne Ekle"}
               </Button>
               <Button
                 variant={isAdded ? "cta" : "secondary"}

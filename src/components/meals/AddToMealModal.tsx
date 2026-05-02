@@ -135,10 +135,10 @@ export default function AddToMealModal({
         {/* Header (Manüel) */}
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Öğününe Ekle
+            Öğüne Ekle
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Besini hangi öğününe eklemek istersin?
+            Besini hangi öğüne eklemek istersin?
           </p>
         </div>
 
@@ -276,11 +276,11 @@ export default function AddToMealModal({
 
         {/* Butonlar */}
         <div className="flex gap-3">
-          <Button variant="ghost" className="flex-1" onClick={onClose}>
+          <Button variant="redSecondary" className="flex-1" onClick={onClose}>
             İptal
           </Button>
           <Button
-            variant="bluePrimary"
+            variant="cta"
             className="flex-[2] py-3 h-12"
             disabled={!selectedMealId || isSubmitting}
             loading={isSubmitting}
