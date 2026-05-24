@@ -1,3 +1,5 @@
+import { supabase } from "../lib/supabase";
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
@@ -24,12 +26,23 @@ export const chatService = {
       throw new Error("Chatbot webhook URL not configured.");
     }
 
-    const payload = { message, history: history.slice(-10), userId, meals };
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+
+    void userId;
+    const payload = { message, history: history.slice(-10), meals };
     console.log("ChatBot payload:", JSON.stringify(payload, null, 2));
 
     const response = await fetch(webhookUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify(payload),
     });
 
