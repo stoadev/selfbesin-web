@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const { data } = await supabase
-        .from("profiles")
+        .from("selfbesin_profiles")
         .select("avatar_url")
         .eq("id", currUser.id)
         .limit(1);

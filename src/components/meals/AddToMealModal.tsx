@@ -34,7 +34,7 @@ export default function AddToMealModal({
     if (!user) return;
     try {
       const { data, error } = await supabase
-        .from("meals")
+        .from("selfbesin_meals")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true });
@@ -72,7 +72,7 @@ export default function AddToMealModal({
     try {
       // 1. Mevcut kaydı sorgula
       const { data: existingEntry, error: fetchError } = await supabase
-        .from("meal_foods")
+        .from("selfbesin_meal_foods")
         .select("*")
         .eq("meal_id", selectedMealId)
         .eq("food_id", food.id)
@@ -86,7 +86,7 @@ export default function AddToMealModal({
         const factor = newGrams / 100;
 
         const { error: updateError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .update({
             grams: newGrams,
             calories: food.calories_per_100g * factor,
@@ -101,7 +101,7 @@ export default function AddToMealModal({
         // 3. Yoksa yeni ekle (INSERT)
         const factor = grams / 100;
         const { error: insertError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .insert([
             {
               meal_id: selectedMealId,

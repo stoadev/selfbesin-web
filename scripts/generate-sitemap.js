@@ -30,7 +30,7 @@ async function generateSitemap() {
 
   // Fetch all food slugs
   const { data: foods, error } = await supabase
-    .from("foods")
+    .from("selfbesin_foods")
     .select("slug, created_at");
 
   if (error) {

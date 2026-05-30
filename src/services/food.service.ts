@@ -42,7 +42,7 @@ export const foodService = {
 
   async getFoodById(id: string): Promise<Food | null> {
     const { data, error } = await supabase
-      .from("foods")
+      .from("selfbesin_foods")
       .select("*")
       .eq("id", id)
       .single();
@@ -57,7 +57,7 @@ export const foodService = {
 
   async getFoodBySlug(slug: string): Promise<Food | null> {
     const { data, error } = await supabase
-      .from("foods")
+      .from("selfbesin_foods")
       .select("*")
       .eq("slug", slug)
       .single();
@@ -72,7 +72,7 @@ export const foodService = {
 
   async getRandomFood(): Promise<Food | null> {
     const { count, error: countError } = await supabase
-      .from("foods")
+      .from("selfbesin_foods")
       .select("*", { count: "exact", head: true });
 
     if (countError || count === null) {
@@ -83,7 +83,7 @@ export const foodService = {
     const randomIndex = Math.floor(Math.random() * count);
 
     const { data, error } = await supabase
-      .from("foods")
+      .from("selfbesin_foods")
       .select("*")
       .range(randomIndex, randomIndex)
       .maybeSingle();

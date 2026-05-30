@@ -103,7 +103,7 @@ async function prerender() {
 
   // Fetch all foods from Supabase in one request
   const { data: foods, error } = await supabase
-    .from("foods")
+    .from("selfbesin_foods")
     .select("slug, name, qualifier, calories_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g, basis_unit, image_url");
 
   if (error) {

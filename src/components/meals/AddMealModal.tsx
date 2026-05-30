@@ -122,7 +122,7 @@ function AddMealModalContent({
       if (mealToEdit) {
         // 1. Update Meal Name
         const { error: updateError } = await supabase
-          .from("meals")
+          .from("selfbesin_meals")
           .update({ name: mealName.trim() })
           .eq("id", mealToEdit.id);
 
@@ -130,7 +130,7 @@ function AddMealModalContent({
 
         // 2. Delete Existing Foods
         const { error: deleteError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .delete()
           .eq("meal_id", mealToEdit.id);
 
@@ -138,7 +138,7 @@ function AddMealModalContent({
       } else {
         // 1. Create New Meal
         const { data: meal, error: mealError } = await supabase
-          .from("meals")
+          .from("selfbesin_meals")
           .insert([{ user_id: user.id, name: mealName.trim() }])
           .select()
           .single();
@@ -165,7 +165,7 @@ function AddMealModalContent({
 
       if (mealFoodsToInsert.length > 0) {
         const { error: foodsError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .insert(mealFoodsToInsert);
 
         if (foodsError) throw foodsError;
@@ -191,7 +191,7 @@ function AddMealModalContent({
       // Meal Foods'lar veritabanında cascade delete değilse manuel silmek gerekebilir.
       // Ancak genellikle setup'ımızda meals silinince bağlı meal_foods'lar silinir.
       const { error } = await supabase
-        .from("meals")
+        .from("selfbesin_meals")
         .delete()
         .eq("id", mealToEdit.id);
 

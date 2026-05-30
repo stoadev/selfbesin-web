@@ -30,7 +30,7 @@ function ProfileModalContent({ onClose }: { onClose: () => void }) {
 
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("selfbesin_profiles")
           .select(`username, avatar_url, full_name, updated_at`)
           .eq("id", user.id)
           .limit(1);

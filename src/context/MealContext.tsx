@@ -17,13 +17,13 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
 
       try {
         const { data, error } = await supabase
-          .from("meals")
+          .from("selfbesin_meals")
           .select(
             `
           *,
-          meal_foods (
+          selfbesin_meal_foods (
             *,
-            food:foods (*)
+            food:selfbesin_foods (*)
           )
         `,
           )

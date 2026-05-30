@@ -95,7 +95,7 @@ export default function MealsPage() {
     try {
       const factor = grams / 100;
       const { error } = await supabase
-        .from("meal_foods")
+        .from("selfbesin_meal_foods")
         .update({
           grams,
           calories: foodToEditAmount.calories_per_100g * factor,
@@ -132,7 +132,7 @@ export default function MealsPage() {
         setConfirmModal((prev) => ({ ...prev, isLoading: true }));
         try {
           const { error } = await supabase
-            .from("meal_foods")
+            .from("selfbesin_meal_foods")
             .delete()
             .eq("id", editingMealFoodId);
 
@@ -165,7 +165,7 @@ export default function MealsPage() {
     try {
       // Check if food already exists in meal
       const { data: existingEntry, error: fetchError } = await supabase
-        .from("meal_foods")
+        .from("selfbesin_meal_foods")
         .select("*")
         .eq("meal_id", selectedMeal.id)
         .eq("food_id", foodToAdd.id)
@@ -178,7 +178,7 @@ export default function MealsPage() {
         const factor = newGrams / 100;
 
         const { error: updateError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .update({
             grams: newGrams,
             calories: foodToAdd.calories_per_100g * factor,
@@ -192,7 +192,7 @@ export default function MealsPage() {
       } else {
         const factor = grams / 100;
         const { error: insertError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .insert([
             {
               meal_id: selectedMeal.id,
@@ -230,7 +230,7 @@ export default function MealsPage() {
         setConfirmModal((prev) => ({ ...prev, isLoading: true }));
         try {
           const { error } = await supabase
-            .from("meals")
+            .from("selfbesin_meals")
             .delete()
             .eq("id", mealId);
 
@@ -252,7 +252,7 @@ export default function MealsPage() {
     setIsMutating(true);
     try {
       const { data: newMeal, error: mealError } = await supabase
-        .from("meals")
+        .from("selfbesin_meals")
         .insert([{ user_id: user.id, name: `${meal.name} (Kopya)` }])
         .select()
         .single();
@@ -271,7 +271,7 @@ export default function MealsPage() {
         }));
 
         const { error: foodsError } = await supabase
-          .from("meal_foods")
+          .from("selfbesin_meal_foods")
           .insert(mealFoodsToInsert);
 
         if (foodsError) throw foodsError;
