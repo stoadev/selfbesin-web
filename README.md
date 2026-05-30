@@ -110,6 +110,27 @@ scripts/           # generate-sitemap.js, prerender.js (build-time)
 - **Chatbot:** istemci → `VITE_CHATBOT_WEBHOOK_URL` (n8n LLM agent) → cevap + opsiyonel `action` (`meal_added`, `food_added`, `meal_created`) → istemci ilgili context'i refresh eder.
 - **Auth & öğün CRUD:** doğrudan Supabase (RLS ile kullanıcı bazlı izolasyon).
 
+## Backend: MeiliSearch Senkronizasyonu
+
+`selfbesin_foods` tablosundaki değişiklikler MeiliSearch `foods` index'ine
+PostgreSQL trigger üzerinden otomatik yansır:
+
+```
+food ekle/güncelle/sil
+   → DB trigger (sync_foods_to_meili)
+   → Edge Function (meili-sync)
+   → MeiliSearch
+```
+
+MeiliSearch write/admin key'i güvenlik gereği **Edge Function'ın environment
+variable'ında** tutulur (`MEILI_URL`, `MEILI_KEY`) — veritabanında saklanmaz.
+Trigger yalnızca yemek dokümanını Edge Function'a iletir, secret'a erişmez.
+Bu sayede veritabanına erişimi olan araçlar (ör. MCP) write key'i göremez.
+
+- Edge Function: `volumes/functions/meili-sync/` (self-hosted)
+- Gerekli env (edge-functions servisi): `MEILI_URL`, `MEILI_KEY`
+- Hesaplanan alanlar (search_text, qualifier_score, brand_priority) trigger'da üretilir; Edge Function yalnızca MeiliSearch'e yazar/siler.
+
 ## Deploy
 
 Vite ile statik build üretilir; herhangi bir static host'a (Vercel, Netlify, Cloudflare Pages) deploy edilebilir. SEO için `npm run build:prerender` ile prerender'lanmış HTML'ler üretilir.
