@@ -155,6 +155,7 @@ function AddMealModalContent({
           return {
             meal_id: mealId,
             food_id: sf.food.id,
+            user_id: user.id,
             grams: sf.grams,
             calories: sf.food.calories_per_100g * factor,
             protein: sf.food.protein_g_per_100g * factor,

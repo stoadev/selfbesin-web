@@ -264,6 +264,7 @@ export default function MealsPage() {
         const mealFoodsToInsert = (meal.meal_foods || []).map((mf) => ({
           meal_id: newMeal.id,
           food_id: mf.food_id,
+          user_id: user.id,
           grams: mf.grams,
           calories: mf.calories,
           protein: mf.protein,
