@@ -635,7 +635,7 @@ export default function MealsPage() {
         onConfirm={handleUpdateMealFoodGrams}
         onDelete={handleDeleteMealFood}
         initialGrams={
-          selectedMeal?.meal_foods.find((mf) => mf.id === editingMealFoodId)
+          selectedMeal?.meal_foods?.find((mf) => mf.id === editingMealFoodId)
             ?.grams
         }
       />
