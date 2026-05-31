@@ -207,7 +207,7 @@ export default function SearchResultsPage() {
                 {/* Image or Placeholder using FoodImage component */}
                 <FoodImage
                   src={food.image_url}
-                  alt={food.display_name?.trim() || food.name}
+                  alt={food.display_name?.trim() || food.name || ""}
                   className="w-24 h-24 md:w-28 md:h-28 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 shrink-0"
                   iconClassName="w-8 h-8"
                 />

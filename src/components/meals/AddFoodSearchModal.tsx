@@ -112,7 +112,7 @@ export default function AddFoodSearchModal({
       const qWords = q.split(/\s+/);
 
       const getMatchPenalty = (food: Food) => {
-        const nameText = food.name.toLocaleLowerCase("tr");
+        const nameText = (food.display_name || "").toLocaleLowerCase("tr");
         const brandText = (food.brand || "").toLocaleLowerCase("tr");
         const nameWords = nameText.split(/\s+/);
         const brandWords = brandText.split(/\s+/);
@@ -192,8 +192,8 @@ export default function AddFoodSearchModal({
       const qualCountB = b.food.qualifier?.length || 0;
       if (qualCountA !== qualCountB) return qualCountA - qualCountB;
 
-      const nameWordsA = a.food.name.split(/\s+/).length;
-      const nameWordsB = b.food.name.split(/\s+/).length;
+      const nameWordsA = (a.food.display_name || "").split(/\s+/).length;
+      const nameWordsB = (b.food.display_name || "").split(/\s+/).length;
       if (nameWordsA !== nameWordsB) return nameWordsA - nameWordsB;
 
       const brandPriA = a.food.brand_priority ?? 99999;

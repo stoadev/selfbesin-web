@@ -85,7 +85,7 @@ export default function HeroSection() {
     try {
       const food = await foodService.getRandomFood();
       if (food) {
-        setQuery(food.display_name?.trim() || food.name);
+        setQuery(food.display_name?.trim() || food.name || "");
         // Yazı gelince dropdown'ı açalım ki sonuçlar görünsün
         if (!isMobile) setIsDropdownOpen(true);
       }
@@ -176,7 +176,7 @@ export default function HeroSection() {
       const qWords = q.split(/\s+/);
 
       const getMatchPenalty = (food: Food) => {
-        const nameText = food.name.toLocaleLowerCase("tr");
+        const nameText = (food.display_name || "").toLocaleLowerCase("tr");
         const brandText = (food.brand || "").toLocaleLowerCase("tr");
         const nameWords = nameText.split(/\s+/);
         const brandWords = brandText.split(/\s+/);
@@ -265,8 +265,8 @@ export default function HeroSection() {
 
       // 4. Öncelik: İsim Sadelik Önceliği (Name Complexity)
       // "Yoğurt" (1 kelime) > "Yeşil Mercimek" (2 kelime). Temel ürünler önce gelir.
-      const nameWordsA = a.food.name.split(/\s+/).length;
-      const nameWordsB = b.food.name.split(/\s+/).length;
+      const nameWordsA = (a.food.display_name || "").split(/\s+/).length;
+      const nameWordsB = (b.food.display_name || "").split(/\s+/).length;
       if (nameWordsA !== nameWordsB) return nameWordsA - nameWordsB;
 
       // 4. Öncelik: Veritabanındaki Marka Önceliği (brand_priority)

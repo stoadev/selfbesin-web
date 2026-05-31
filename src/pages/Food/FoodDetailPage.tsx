@@ -123,7 +123,7 @@ export default function FoodDetailPage() {
         ? serving / activeUnit.grams
         : serving;
 
-  const displayName = food.display_name?.trim() || food.name;
+  const displayName = food.display_name?.trim() || food.name || "";
 
   const jsonLdProduct = {
     "@context": "https://schema.org",

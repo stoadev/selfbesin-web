@@ -5,7 +5,7 @@ export interface FoodUnit {
 
 export interface Food {
   id: string;
-  name: string;
+  name?: string;
   display_name?: string;
   base_name?: string;
   variety?: string;
