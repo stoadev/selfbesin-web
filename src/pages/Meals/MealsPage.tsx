@@ -259,8 +259,8 @@ export default function MealsPage() {
 
       if (mealError) throw mealError;
 
-      if (meal.meal_foods.length > 0) {
-        const mealFoodsToInsert = meal.meal_foods.map((mf) => ({
+      if ((meal.meal_foods || []).length > 0) {
+        const mealFoodsToInsert = (meal.meal_foods || []).map((mf) => ({
           meal_id: newMeal.id,
           food_id: mf.food_id,
           grams: mf.grams,
@@ -507,8 +507,8 @@ export default function MealsPage() {
                             {[
                               {
                                 val: Math.round(
-                                  meal.meal_foods.reduce(
-                                    (acc, mf) => acc + mf.calories,
+                                  (meal.meal_foods || []).reduce(
+                                    (acc, mf) => acc + (mf.calories || 0),
                                     0,
                                   ),
                                 ),
@@ -517,8 +517,8 @@ export default function MealsPage() {
                               },
                               {
                                 val: Math.round(
-                                  meal.meal_foods.reduce(
-                                    (acc, mf) => acc + mf.protein,
+                                  (meal.meal_foods || []).reduce(
+                                    (acc, mf) => acc + (mf.protein || 0),
                                     0,
                                   ),
                                 ),
@@ -527,7 +527,7 @@ export default function MealsPage() {
                               },
                               {
                                 val: Math.round(
-                                  meal.meal_foods.reduce(
+                                  (meal.meal_foods || []).reduce(
                                     (acc, mf) => acc + (mf.carbs || 0),
                                     0,
                                   ),
@@ -537,8 +537,8 @@ export default function MealsPage() {
                               },
                               {
                                 val: Math.round(
-                                  meal.meal_foods.reduce(
-                                    (acc, mf) => acc + mf.fat,
+                                  (meal.meal_foods || []).reduce(
+                                    (acc, mf) => acc + (mf.fat || 0),
                                     0,
                                   ),
                                 ),

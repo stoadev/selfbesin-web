@@ -24,7 +24,7 @@ export default function MealViewModal({
 }: MealViewModalProps) {
   if (!meal) return null;
 
-  const totals = meal.meal_foods.reduce(
+  const totals = (meal.meal_foods || []).reduce(
     (acc, mf) => ({
       calories: acc.calories + mf.calories,
       protein: acc.protein + mf.protein,
@@ -67,7 +67,7 @@ export default function MealViewModal({
 
         {/* Food List */}
         <div className="flex-1 overflow-y-auto p-[2dvh] sm:p-6 space-y-[1dvh] pb-[2dvh]">
-          {meal.meal_foods.map((mf) => (
+          {(meal.meal_foods || []).map((mf) => (
             <div
               key={mf.id}
               onClick={() => onFoodClick?.(mf)}
