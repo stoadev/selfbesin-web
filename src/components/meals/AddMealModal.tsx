@@ -273,9 +273,7 @@ function AddMealModalContent({
                   <div className="flex items-center gap-3">
                     <Apple className="w-4 h-4 text-emerald-500" />
                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {food.brand && food.brand !== "Genel"
-                        ? `${food.brand} ${food.name}`
-                        : food.name}
+                      {food.display_name?.trim() || food.name}
                     </span>
                   </div>
                   <Plus className="w-4 h-4 text-gray-400" />
@@ -300,7 +298,7 @@ function AddMealModalContent({
               >
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
-                    {sf.food.name}
+                    {sf.food.display_name?.trim() || sf.food.name}
                   </h4>
                   <div className="flex items-center gap-3 text-[10px] font-bold tracking-tight mt-1">
                     <span className="text-red-500">

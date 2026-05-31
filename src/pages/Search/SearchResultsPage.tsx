@@ -36,20 +36,7 @@ export default function SearchResultsPage() {
     setIsLoading(true);
     try {
       const localResults = await foodService.searchFoods(q);
-      let finalResults = localResults;
-
-      // Webhook'u çağır (yeni besinleri çekip enriched olarak Meilisearch'e ekler)
-      if (q.length >= 3) {
-        const freshData = await foodService.fetchAndLoadFood(q);
-        if (freshData.length > 0) {
-          const refreshed = await foodService.searchFoods(q);
-          if (refreshed.length > 0) {
-            finalResults = refreshed;
-          }
-        }
-      }
-
-      setResults(finalResults);
+      setResults(localResults);
     } catch (err) {
       console.error(err);
     } finally {
@@ -203,19 +190,12 @@ export default function SearchResultsPage() {
 
                   {/* Title */}
                   <h3 className="text-lg md:text-xl font-semibold text-[#1a0dab] dark:text-[#8ab4f8] group-hover:underline mb-1 cursor-pointer">
-                    {food.brand && food.brand !== "Genel" && <>{food.brand} </>}
-                    {food.qualifier && food.qualifier.length > 0 && (
-                      <>{food.qualifier.join(" ")} </>
-                    )}
-                    {food.name}
+                    {food.display_name?.trim() || food.name}
                   </h3>
 
                   {/* Snippet / Description */}
                   <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 md:line-clamp-3 leading-relaxed">
-                    {food.name}
-                    {food.qualifier?.length
-                      ? ` ${food.qualifier.join(" ")}`
-                      : ""}{" "}
+                    {food.display_name?.trim() || food.name}{" "}
                     besininin 100{" "}
                     {getBasisLabel(food).unit === "ml" ? "ml'si" : "gramı"}{" "}
                     {food.calories_per_100g} kaloridir. Macro değerleri:{" "}
@@ -227,7 +207,7 @@ export default function SearchResultsPage() {
                 {/* Image or Placeholder using FoodImage component */}
                 <FoodImage
                   src={food.image_url}
-                  alt={food.name}
+                  alt={food.display_name?.trim() || food.name}
                   className="w-24 h-24 md:w-28 md:h-28 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 shrink-0"
                   iconClassName="w-8 h-8"
                 />

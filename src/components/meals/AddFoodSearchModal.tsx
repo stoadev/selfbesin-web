@@ -57,27 +57,9 @@ export default function AddFoodSearchModal({
 
       try {
         const localResults = await foodService.searchFoods(debouncedQuery);
-        let finalResults = localResults;
 
         if (active) {
-          const hasGoodMatch = localResults.some((f) =>
-            f.name
-              .toLocaleLowerCase("tr")
-              .includes(debouncedQuery.toLocaleLowerCase("tr")),
-          );
-
-          if (
-            (!hasGoodMatch || localResults.length < 3) &&
-            debouncedQuery.length >= 1
-          ) {
-            const freshData =
-              await foodService.fetchAndLoadFood(debouncedQuery);
-            const existingIds = new Set(localResults.map((f) => f.id));
-            const newItems = freshData.filter((f) => !existingIds.has(f.id));
-            finalResults = [...localResults, ...newItems];
-          }
-
-          setResults(finalResults);
+          setResults(localResults);
           setSelectedIndex(-1);
           setLastFetchedQuery(debouncedQuery);
         }

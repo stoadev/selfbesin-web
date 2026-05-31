@@ -77,18 +77,15 @@ export default function MealViewModal({
               <div className="flex items-center gap-[1.5dvw] p-[1.5dvw] bg-white dark:bg-gray-800 rounded-t-xl border border-gray-100 dark:border-gray-700">
                 <FoodImage
                   src={mf.food?.image_url}
-                  alt={mf.food?.name || "Besin"}
+                  alt={mf.food?.display_name?.trim() || mf.food?.name || "Besin"}
                   className="w-8 h-8 rounded-lg shrink-0 overflow-hidden"
                   iconClassName="w-4 h-4"
                 />
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
-                    {mf.food?.name || "Bilinmeyen Besin"}
-                    {mf.food?.qualifier && mf.food.qualifier.length > 0 && (
-                      <span className="text-gray-400 dark:text-gray-500 font-normal ml-1">
-                        {mf.food.qualifier.join(" ")}
-                      </span>
-                    )}
+                    {mf.food?.display_name?.trim() ||
+                      mf.food?.name ||
+                      "Bilinmeyen Besin"}
                   </h4>
                   <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-gray-500 dark:text-gray-400">
                     <span>

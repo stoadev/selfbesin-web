@@ -6,6 +6,10 @@ export interface FoodUnit {
 export interface Food {
   id: string;
   name: string;
+  display_name?: string;
+  base_name?: string;
+  variety?: string;
+  product_line?: string;
   qualifier?: string[];
   slug: string;
   calories_per_100g: number;

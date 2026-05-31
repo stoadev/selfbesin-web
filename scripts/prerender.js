@@ -33,6 +33,9 @@ function getUnit(food) {
 }
 
 function getFullName(food) {
+  if (food.display_name && food.display_name.trim()) {
+    return food.display_name.trim();
+  }
   const qualifier =
     food.qualifier && food.qualifier.length
       ? ` ${food.qualifier.join(" ")}`
@@ -104,7 +107,7 @@ async function prerender() {
   // Fetch all foods from Supabase in one request
   const { data: foods, error } = await supabase
     .from("selfbesin_foods")
-    .select("slug, name, qualifier, calories_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g, basis_unit, image_url");
+    .select("slug, name, display_name, qualifier, calories_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g, basis_unit, image_url");
 
   if (error) {
     console.error("Error fetching foods:", error);

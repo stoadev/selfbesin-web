@@ -149,12 +149,7 @@ export default function AddToMealModal({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-              {food.name}
-              {food.qualifier && food.qualifier.length > 0 && (
-                <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
-                  {food.qualifier.join(" ")}
-                </span>
-              )}
+              {food.display_name?.trim() || food.name}
             </h4>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               {grams}

@@ -46,28 +46,9 @@ export default function HeroSection() {
 
       try {
         const localResults = await foodService.searchFoods(debouncedQuery);
-        let finalResults = localResults;
 
         if (active) {
-          // Eğer lokalde sonuç azsa veya tam eşleşme (isim içinde sorgu geçmesi) yoksa webhook'u da dene
-          const hasGoodMatch = localResults.some((f) =>
-            f.name
-              .toLocaleLowerCase("tr")
-              .includes(debouncedQuery.toLocaleLowerCase("tr")),
-          );
-
-          if (
-            (!hasGoodMatch || localResults.length < 3) &&
-            debouncedQuery.length >= 1
-          ) {
-            const freshData =
-              await foodService.fetchAndLoadFood(debouncedQuery);
-            const existingIds = new Set(localResults.map((f) => f.id));
-            const newItems = freshData.filter((f) => !existingIds.has(f.id));
-            finalResults = [...localResults, ...newItems];
-          }
-
-          setResults(finalResults);
+          setResults(localResults);
           setSelectedIndex(-1);
           setLastFetchedQuery(debouncedQuery);
         }
@@ -104,7 +85,7 @@ export default function HeroSection() {
     try {
       const food = await foodService.getRandomFood();
       if (food) {
-        setQuery(food.name);
+        setQuery(food.display_name?.trim() || food.name);
         // Yazı gelince dropdown'ı açalım ki sonuçlar görünsün
         if (!isMobile) setIsDropdownOpen(true);
       }

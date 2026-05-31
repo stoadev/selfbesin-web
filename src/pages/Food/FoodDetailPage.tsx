@@ -123,15 +123,15 @@ export default function FoodDetailPage() {
         ? serving / activeUnit.grams
         : serving;
 
+  const displayName = food.display_name?.trim() || food.name;
+
   const jsonLdProduct = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: food.qualifier?.length
-      ? `${food.name} ${food.qualifier.join(" ")}`
-      : food.name,
+    name: displayName,
     url: `https://selfbesin.com/besin/${food.slug}`,
     ...(food.image_url && { image: food.image_url }),
-    description: `${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
+    description: `${displayName} besin değerleri: kalori, protein, karbonhidrat ve yağ bilgileri.`,
     nutrition: {
       "@type": "NutritionInformation",
       servingSize: `100 ${unit}`,
@@ -155,9 +155,7 @@ export default function FoodDetailPage() {
       {
         "@type": "ListItem",
         position: 2,
-        name: food.qualifier?.length
-          ? `${food.name} ${food.qualifier.join(" ")}`
-          : food.name,
+        name: displayName,
         item: `https://selfbesin.com/besin/${food.slug}`,
       },
     ],
@@ -167,21 +165,19 @@ export default function FoodDetailPage() {
     <div className="h-dvh flex flex-col overflow-hidden bg-white dark:bg-gray-900 max-w-xl md:max-w-5xl mx-auto w-full">
       <Helmet>
         <title>
-          {food.name}
-          {food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} Besin
-          Değerleri – Selfbesin
+          {displayName} Besin Değerleri – Selfbesin
         </title>
         <meta
           name="description"
-          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} besin değerleri: 100${unit} için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
+          content={`${displayName} besin değerleri: 100${unit} için ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein, ${food.carbs_g_per_100g}g karbonhidrat, ${food.fat_g_per_100g}g yağ.`}
         />
         <meta
           property="og:title"
-          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""} Besin Değerleri – Selfbesin`}
+          content={`${displayName} Besin Değerleri – Selfbesin`}
         />
         <meta
           property="og:description"
-          content={`${food.name}${food.qualifier?.length ? ` ${food.qualifier.join(" ")}` : ""}: 100${unit} = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
+          content={`${displayName}: 100${unit} = ${food.calories_per_100g} kcal kalori, ${food.protein_g_per_100g}g protein`}
         />
         <meta property="og:type" content="website" />
         <meta
@@ -219,18 +215,8 @@ export default function FoodDetailPage() {
         </Link>
         <div className="flex flex-col items-center">
           <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate max-w-[65dvw]">
-            {food.name}
-            {food.qualifier && food.qualifier.length > 0 && (
-              <span className="text-gray-500 dark:text-gray-400 font-normal ml-1">
-                {food.qualifier.join(" ")}
-              </span>
-            )}
+            {displayName}
           </h1>
-          {food.brand && food.brand !== "Genel" && (
-            <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
-              {food.brand}
-            </span>
-          )}
         </div>
       </div>
 
@@ -245,7 +231,7 @@ export default function FoodDetailPage() {
           >
             <FoodImage
               src={food.image_url}
-              alt={food.name}
+              alt={displayName}
               className="w-full h-full"
               iconClassName="w-12 h-12"
             />
@@ -474,7 +460,7 @@ export default function FoodDetailPage() {
           >
             <img
               src={food.image_url}
-              alt={food.name}
+              alt={displayName}
               className="max-w-full max-h-full object-contain animate-in zoom-in-95 duration-300"
             />
           </div>
