@@ -160,7 +160,7 @@ export default function MealsPage() {
   };
 
   const handleAddFoodToMeal = async (grams: number) => {
-    if (!foodToAdd || !selectedMeal) return;
+    if (!foodToAdd || !selectedMeal || !user) return;
 
     try {
       // Check if food already exists in meal
@@ -197,6 +197,7 @@ export default function MealsPage() {
             {
               meal_id: selectedMeal.id,
               food_id: foodToAdd.id,
+              user_id: user.id,
               grams,
               calories: foodToAdd.calories_per_100g * factor,
               protein: foodToAdd.protein_g_per_100g * factor,
