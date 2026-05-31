@@ -106,6 +106,7 @@ export default function AddToMealModal({
             {
               meal_id: selectedMealId,
               food_id: food.id,
+              user_id: user.id,
               grams: grams,
               calories: food.calories_per_100g * factor,
               protein: food.protein_g_per_100g * factor,
