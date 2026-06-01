@@ -21,7 +21,7 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
           .select(
             `
           *,
-          selfbesin_meal_foods (
+          meal_foods:selfbesin_meal_foods (
             *,
             food:selfbesin_foods (*)
           )
