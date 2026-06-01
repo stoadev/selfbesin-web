@@ -99,7 +99,6 @@ export default function AddToMealModal({
         if (updateError) throw updateError;
       } else {
         // 3. Yoksa yeni ekle (INSERT)
-        const factor = grams / 100;
         const { error: insertError } = await supabase
           .from("selfbesin_meal_foods")
           .insert([
@@ -108,10 +107,6 @@ export default function AddToMealModal({
               food_id: food.id,
               user_id: user.id,
               grams: grams,
-              calories: food.calories_per_100g * factor,
-              protein: food.protein_g_per_100g * factor,
-              carbs: food.carbs_g_per_100g * factor,
-              fat: food.fat_g_per_100g * factor,
             },
           ]);
 

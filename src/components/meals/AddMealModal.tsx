@@ -150,19 +150,12 @@ function AddMealModalContent({
       // 2. Insert Meal Foods
       const mealFoodsToInsert = selectedFoods
         .filter((sf) => sf.food)
-        .map((sf) => {
-          const factor = sf.grams / 100;
-          return {
-            meal_id: mealId,
-            food_id: sf.food.id,
-            user_id: user.id,
-            grams: sf.grams,
-            calories: sf.food.calories_per_100g * factor,
-            protein: sf.food.protein_g_per_100g * factor,
-            carbs: sf.food.carbs_g_per_100g * factor,
-            fat: sf.food.fat_g_per_100g * factor,
-          };
-        });
+        .map((sf) => ({
+          meal_id: mealId,
+          food_id: sf.food.id,
+          user_id: user.id,
+          grams: sf.grams,
+        }));
 
       if (mealFoodsToInsert.length > 0) {
         const { error: foodsError } = await supabase

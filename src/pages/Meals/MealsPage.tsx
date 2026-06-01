@@ -190,7 +190,6 @@ export default function MealsPage() {
 
         if (updateError) throw updateError;
       } else {
-        const factor = grams / 100;
         const { error: insertError } = await supabase
           .from("selfbesin_meal_foods")
           .insert([
@@ -199,10 +198,6 @@ export default function MealsPage() {
               food_id: foodToAdd.id,
               user_id: user.id,
               grams,
-              calories: foodToAdd.calories_per_100g * factor,
-              protein: foodToAdd.protein_g_per_100g * factor,
-              carbs: foodToAdd.carbs_g_per_100g * factor,
-              fat: foodToAdd.fat_g_per_100g * factor,
             },
           ]);
 
@@ -266,10 +261,6 @@ export default function MealsPage() {
           food_id: mf.food_id,
           user_id: user.id,
           grams: mf.grams,
-          calories: mf.calories,
-          protein: mf.protein,
-          carbs: mf.carbs,
-          fat: mf.fat,
         }));
 
         const { error: foodsError } = await supabase
