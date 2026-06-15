@@ -5,7 +5,6 @@ import Button from "../../components/common/Button";
 import SearchOverlay from "../../components/common/SearchOverlay";
 import { foodService } from "../../services/food.service";
 import { useDebounce } from "../../hooks/useDebounce";
-import { useAuth } from "../../hooks/useAuth";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 import type { Food } from "../../types";
 import HighlightedText from "../../components/common/HighlightedText";
@@ -27,11 +26,7 @@ export default function HeroSection() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastFetchedQuery, setLastFetchedQuery] = useState("");
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
-  const [isFetchingFromWeb, setIsFetchingFromWeb] = useState(false);
-  const [webFetchError, setWebFetchError] = useState<string | null>(null);
-  const [webFetchSuccess, setWebFetchSuccess] = useState<string | null>(null);
 
-  const { isAdmin } = useAuth();
   const debouncedQuery = useDebounce(query, 300);
   const { recentSearches, addSearch, removeSearch, clearHistory } =
     useRecentSearches();
@@ -123,26 +118,6 @@ export default function HeroSection() {
   function handleSearchClose() {
     setIsSearchOpen(false);
     setQuery("");
-  }
-
-  async function handleFetchFromWeb() {
-    setIsFetchingFromWeb(true);
-    setWebFetchError(null);
-    setWebFetchSuccess(null);
-    try {
-      const added = await foodService.fetchAndLoadFood(query);
-      if (added > 0) {
-        setWebFetchSuccess(
-          `${added} besin bulundu ve incelemeye alındı. Onaylandıktan sonra aramada görünecek.`,
-        );
-      } else {
-        setWebFetchError("İnternetten sonuç bulunamadı.");
-      }
-    } catch (err) {
-      setWebFetchError(err instanceof Error ? err.message : "Bir hata oluştu.");
-    } finally {
-      setIsFetchingFromWeb(false);
-    }
   }
 
   // Kullanıcı hala yazıyorsa veya sonuçlar henüz gelmediyse loading göster
@@ -436,11 +411,6 @@ export default function HeroSection() {
                   onAddSearch={addSearch}
                   buildSearchTerm={buildSearchTerm}
                   onMouseLeave={() => setSelectedIndex(-1)}
-                  isAdmin={isAdmin}
-                  isFetchingFromWeb={isFetchingFromWeb}
-                  webFetchError={webFetchError}
-                  webFetchSuccess={webFetchSuccess}
-                  onFetchFromWeb={handleFetchFromWeb}
                 />
               </div>
             )}
@@ -464,11 +434,6 @@ function DesktopDropdownContent({
   onRemoveSearch,
   buildSearchTerm,
   onMouseLeave,
-  isAdmin,
-  isFetchingFromWeb,
-  webFetchError,
-  webFetchSuccess,
-  onFetchFromWeb,
 }: {
   query: string;
   onClose: () => void;
@@ -481,11 +446,6 @@ function DesktopDropdownContent({
   onRemoveSearch: (term: string) => void;
   buildSearchTerm: (food: Food, query?: string) => string;
   onMouseLeave?: () => void;
-  isAdmin: boolean;
-  isFetchingFromWeb: boolean;
-  webFetchError: string | null;
-  webFetchSuccess: string | null;
-  onFetchFromWeb: () => void;
 }) {
   const navigate = useNavigate();
 
@@ -560,29 +520,6 @@ function DesktopDropdownContent({
         {combinedItems.length === 0 && query && !isLoading && (
           <li className="px-5 py-4 text-sm text-gray-400 text-center">
             "{query}" için sonuç bulunamadı.
-          </li>
-        )}
-
-        {isAdmin && (
-          <li className="px-5 py-3 text-center">
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={query.trim().length < 3 || isFetchingFromWeb}
-              loading={isFetchingFromWeb}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onFetchFromWeb();
-              }}
-            >
-              İnternetten ara
-            </Button>
-            {webFetchError && (
-              <p className="mt-2 text-xs text-red-500">{webFetchError}</p>
-            )}
-            {webFetchSuccess && (
-              <p className="mt-2 text-xs text-green-600">{webFetchSuccess}</p>
-            )}
           </li>
         )}
       </ul>

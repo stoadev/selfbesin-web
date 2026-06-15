@@ -3,14 +3,16 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "../common/ThemeToggle";
 import { useAuth } from "../../hooks/useAuth";
 import Button from "../common/Button";
-import { User } from "lucide-react";
+import { User, Plus } from "lucide-react";
 import AuthModal from "../common/AuthModal";
 import ProfileModal from "../common/ProfileModal";
+import AdminAddFoodModal from "../common/AdminAddFoodModal";
 
 export default function Navbar() {
-  const { user, avatarUrl } = useAuth();
+  const { user, avatarUrl, isAdmin } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAddFoodModalOpen, setIsAddFoodModalOpen] = useState(false);
 
   return (
     <>
@@ -36,6 +38,16 @@ export default function Navbar() {
 
             {/* Right Side Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
+              {isAdmin && (
+                <button
+                  onClick={() => setIsAddFoodModalOpen(true)}
+                  aria-label="Besin Ekle"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              )}
+
               <ThemeToggle />
 
               {user ? (
@@ -75,6 +87,11 @@ export default function Navbar() {
       <ProfileModal
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      <AdminAddFoodModal
+        isOpen={isAddFoodModalOpen}
+        onClose={() => setIsAddFoodModalOpen(false)}
       />
     </>
   );
