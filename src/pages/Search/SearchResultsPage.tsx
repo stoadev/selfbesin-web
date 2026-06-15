@@ -24,6 +24,7 @@ export default function SearchResultsPage() {
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [isFetchingFromWeb, setIsFetchingFromWeb] = useState(false);
   const [webFetchError, setWebFetchError] = useState<string | null>(null);
+  const [webFetchSuccess, setWebFetchSuccess] = useState<string | null>(null);
 
   const { isAdmin } = useAuth();
   const { addSearch, recentSearches, removeSearch, clearHistory } =
@@ -64,21 +65,18 @@ export default function SearchResultsPage() {
   const handleFetchFromWeb = async () => {
     setIsFetchingFromWeb(true);
     setWebFetchError(null);
+    setWebFetchSuccess(null);
     try {
-      const fetched = await foodService.fetchAndLoadFood(query);
-      if (fetched.length === 0) {
+      const added = await foodService.fetchAndLoadFood(query);
+      if (added > 0) {
+        setWebFetchSuccess(
+          `${added} besin bulundu ve incelemeye alındı. Onaylandıktan sonra aramada görünecek.`,
+        );
+      } else {
         setWebFetchError("İnternetten sonuç bulunamadı.");
-        return;
       }
-      setResults((prev) => {
-        const existingIds = new Set(prev.map((f) => f.id));
-        const newItems = fetched.filter((f) => !existingIds.has(f.id));
-        return [...prev, ...newItems];
-      });
     } catch (err) {
-      setWebFetchError(
-        err instanceof Error ? err.message : "Bir hata oluştu.",
-      );
+      setWebFetchError(err instanceof Error ? err.message : "Bir hata oluştu.");
     } finally {
       setIsFetchingFromWeb(false);
     }
@@ -274,6 +272,9 @@ export default function SearchResultsPage() {
             </Button>
             {webFetchError && (
               <p className="mt-2 text-sm text-red-500">{webFetchError}</p>
+            )}
+            {webFetchSuccess && (
+              <p className="mt-2 text-sm text-green-600">{webFetchSuccess}</p>
             )}
           </div>
         )}
