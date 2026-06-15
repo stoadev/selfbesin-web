@@ -96,4 +96,64 @@ export const foodService = {
     return data;
   },
 
+  async fetchAndLoadFood(query: string): Promise<Food[]> {
+    const webhookUrl = import.meta.env.VITE_FOOD_FETCH_WEBHOOK_URL;
+
+    if (!webhookUrl) {
+      console.warn("Food fetch webhook URL not configured.");
+      return [];
+    }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Oturum bulunamadı. Lütfen tekrar giriş yapın.");
+    }
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook failed with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      const results = Array.isArray(data) ? data : data ? [data] : [];
+
+      const foods: Food[] = results
+        .map((item) => {
+          const foodData = item?.food;
+          if (!foodData) return null;
+
+          let servingUnits = foodData.serving_units;
+          if (typeof servingUnits === "string") {
+            try {
+              servingUnits = JSON.parse(servingUnits);
+            } catch {
+              servingUnits = [];
+            }
+          }
+
+          return {
+            ...foodData,
+            serving_units: Array.isArray(servingUnits) ? servingUnits : [],
+          };
+        })
+        .filter((f): f is Food => f !== null);
+
+      return foods;
+    } catch (err) {
+      console.error("Error in fetchAndLoadFood:", err);
+      return [];
+    }
+  },
 };

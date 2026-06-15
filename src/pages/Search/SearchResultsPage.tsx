@@ -7,7 +7,9 @@ import type { Food } from "../../types";
 import { getBasisLabel } from "../../types";
 import SearchOverlay from "../../components/common/SearchOverlay";
 import FoodImage from "../../components/common/FoodImage";
+import Button from "../../components/common/Button";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
+import { useAuth } from "../../hooks/useAuth";
 import type { CombinedItem } from "../Landing/HeroSection";
 import { buildSearchTerm } from "../../utils/searchUtils";
 
@@ -20,7 +22,10 @@ export default function SearchResultsPage() {
   const [results, setResults] = useState<Food[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [isFetchingFromWeb, setIsFetchingFromWeb] = useState(false);
+  const [webFetchError, setWebFetchError] = useState<string | null>(null);
 
+  const { isAdmin } = useAuth();
   const { addSearch, recentSearches, removeSearch, clearHistory } =
     useRecentSearches();
 
@@ -54,6 +59,29 @@ export default function SearchResultsPage() {
 
   const handleClear = () => {
     setInputValue("");
+  };
+
+  const handleFetchFromWeb = async () => {
+    setIsFetchingFromWeb(true);
+    setWebFetchError(null);
+    try {
+      const fetched = await foodService.fetchAndLoadFood(query);
+      if (fetched.length === 0) {
+        setWebFetchError("İnternetten sonuç bulunamadı.");
+        return;
+      }
+      setResults((prev) => {
+        const existingIds = new Set(prev.map((f) => f.id));
+        const newItems = fetched.filter((f) => !existingIds.has(f.id));
+        return [...prev, ...newItems];
+      });
+    } catch (err) {
+      setWebFetchError(
+        err instanceof Error ? err.message : "Bir hata oluştu.",
+      );
+    } finally {
+      setIsFetchingFromWeb(false);
+    }
   };
 
   const combinedItems = useMemo(() => {
@@ -229,6 +257,24 @@ export default function SearchResultsPage() {
               Farklı bir terim aramayı deneyin veya yazım hatası yapmadığınızdan
               emin olun.
             </p>
+          </div>
+        )}
+
+        {/* Admin: İnternetten ara */}
+        {isAdmin && (
+          <div className="py-6 text-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={query.trim().length < 3 || isFetchingFromWeb}
+              loading={isFetchingFromWeb}
+              onClick={handleFetchFromWeb}
+            >
+              İnternetten ara
+            </Button>
+            {webFetchError && (
+              <p className="mt-2 text-sm text-red-500">{webFetchError}</p>
+            )}
           </div>
         )}
       </main>

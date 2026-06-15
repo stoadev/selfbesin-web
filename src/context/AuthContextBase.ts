@@ -6,6 +6,7 @@ export type AuthContextType = {
   user: User | null;
   avatarUrl: string | null;
   loading: boolean;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
   refreshAvatar: () => Promise<void>;
 };

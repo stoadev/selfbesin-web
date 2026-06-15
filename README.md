@@ -40,7 +40,6 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 VITE_MEILISEARCH_URL=
 VITE_MEILISEARCH_API_KEY=
-VITE_MEILISEARCH_ADMIN_KEY=
 VITE_FOOD_FETCH_WEBHOOK_URL=
 VITE_CHATBOT_WEBHOOK_URL=
 ```
@@ -48,8 +47,7 @@ VITE_CHATBOT_WEBHOOK_URL=
 | Env | Görev |
 |---|---|
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Supabase bağlantısı (DB + auth) |
-| `VITE_MEILISEARCH_URL` / `VITE_MEILISEARCH_API_KEY` | İstemci tarafı arama |
-| `VITE_MEILISEARCH_ADMIN_KEY` | İndeksleme/admin işlemleri |
+| `VITE_MEILISEARCH_URL` / `VITE_MEILISEARCH_API_KEY` | İstemci tarafı arama (search-only key) |
 | `VITE_FOOD_FETCH_WEBHOOK_URL` | Aramada bulunamayan besinleri n8n üzerinden harici kaynaktan çekip DB'ye yükleyen webhook |
 | `VITE_CHATBOT_WEBHOOK_URL` | Chatbot mesajlarının yönlendirildiği n8n webhook'u |
 

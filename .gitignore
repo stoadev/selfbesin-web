@@ -17,6 +17,7 @@ dist-ssr
 .env.*
 
 messages.md
+.workflow/
 
 # Editor directories and files
 .vscode/*

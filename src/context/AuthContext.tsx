@@ -42,13 +42,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const ensureProfile = async (currUser: User) => {
+    try {
+      await supabase.from("selfbesin_profiles").upsert(
+        {
+          id: currUser.id,
+          full_name: currUser.user_metadata?.full_name ?? null,
+          avatar_url:
+            currUser.user_metadata?.avatar_url ??
+            currUser.user_metadata?.picture ??
+            null,
+        },
+        { onConflict: "id", ignoreDuplicates: true },
+      );
+    } catch (e) {
+      console.error("ensureProfile error:", e);
+    }
+  };
+
   useEffect(() => {
     // Mevcut oturumu kontrol et
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
       setLoading(false);
-      if (s?.user) fetchAvatar(s.user);
+      if (s?.user) {
+        ensureProfile(s.user);
+        fetchAvatar(s.user);
+      }
     });
 
     // Oturum değişikliklerini dinle
@@ -59,6 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(s?.user ?? null);
       setLoading(false);
       if (s?.user) {
+        ensureProfile(s.user);
         fetchAvatar(s.user);
       } else {
         setAvatarUrl(null);
@@ -75,9 +97,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAvatar = () => fetchAvatar(user);
 
+  const isAdmin = user?.app_metadata?.role === "admin";
+
   return (
     <AuthContext.Provider
-      value={{ session, user, avatarUrl, loading, signOut, refreshAvatar }}
+      value={{ session, user, avatarUrl, loading, signOut, refreshAvatar, isAdmin }}
     >
       {children}
     </AuthContext.Provider>
