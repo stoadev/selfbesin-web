@@ -18,6 +18,8 @@ dist-ssr
 
 messages.md
 .workflow/
+CLAUDE.md
+selfbesin-sutun-sozlugu.md
 
 # Editor directories and files
 .vscode/*
