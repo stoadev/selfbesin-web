@@ -26,7 +26,7 @@ async function generateSitemap() {
   const baseUrl = "https://selfbesin.com";
 
   // Static pages
-  const staticPages = ["", "/search", "/meals", "/privacy"];
+  const staticPages = ["", "/search/", "/meals/", "/privacy/"];
 
   // Fetch all food slugs
   const { data: foods, error } = await supabase
@@ -54,7 +54,7 @@ async function generateSitemap() {
     .map(
       (food) => `
   <url>
-    <loc>${baseUrl}/besin/${food.slug}</loc>
+    <loc>${baseUrl}/besin/${food.slug}/</loc>
     <lastmod>${new Date(food.created_at || Date.now()).toISOString().split("T")[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
