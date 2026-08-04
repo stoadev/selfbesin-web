@@ -11,7 +11,10 @@ import { useRecentSearches } from "../../hooks/useRecentSearches";
 import type { CombinedItem } from "../Landing/HeroSection";
 import { buildSearchTerm } from "../../utils/searchUtils";
 import { shouldTriggerAI } from "../../utils/aiTriggerUtils";
-import { aiSearchService } from "../../services/aiSearch.service";
+import {
+  aiSearchService,
+  type AiSearchItem,
+} from "../../services/aiSearch.service";
 import AiAnswerBlock from "../../components/AiAnswerBlock";
 import AuthModal from "../../components/common/AuthModal";
 import { useAuth } from "../../hooks/useAuth";
@@ -26,6 +29,8 @@ export default function SearchResultsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
   const [aiAnswer, setAiAnswer] = useState("");
+  const [aiItems, setAiItems] = useState<AiSearchItem[] | undefined>(undefined);
+  const [aiTotal, setAiTotal] = useState<number | undefined>(undefined);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiBlock, setShowAiBlock] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -49,12 +54,16 @@ export default function SearchResultsPage() {
 
     if (!query || !shouldTriggerAI(query)) {
       setAiAnswer("");
+      setAiItems(undefined);
+      setAiTotal(undefined);
       setIsAiLoading(false);
       setShowAiBlock(false);
       return;
     }
 
     setAiAnswer("");
+    setAiItems(undefined);
+    setAiTotal(undefined);
     setShowAiBlock(true);
 
     if (!isLoggedIn) {
@@ -66,6 +75,8 @@ export default function SearchResultsPage() {
     aiSearchService.ask(query).then((res) => {
       if (aiRequestIdRef.current !== requestId) return;
       setAiAnswer(res.answer);
+      setAiItems(res.items);
+      setAiTotal(res.total);
       setIsAiLoading(false);
     });
   }, [query]);
@@ -202,6 +213,8 @@ export default function SearchResultsPage() {
             isLoading={isAiLoading}
             isLoggedIn={isLoggedIn}
             onLoginClick={() => setIsAuthModalOpen(true)}
+            items={aiItems}
+            total={aiTotal}
           />
         )}
 

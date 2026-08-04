@@ -19,6 +19,45 @@ if (meiliUrl && meiliKey) {
   }
 }
 
+const STANDALONE_NUMBER_PATTERN = /(^|[^\w%.,])\d{1,3}(?!\w|[.,]\d)/g;
+
+function stripStandaloneNumbers(q: string): string {
+  const cleaned = q
+    .replace(STANDALONE_NUMBER_PATTERN, (_match, prefix: string) => `${prefix} `)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || q;
+}
+
+const SEARCH_STOPWORDS = new Set([
+  "tane",
+  "adet",
+  "kac",
+  "kaç",
+  "kadar",
+  "hangi",
+  "porsiyon",
+  "dilim",
+  "kalori",
+  "kalorisi",
+]);
+
+function stripStopwords(q: string): string {
+  const cleaned = q
+    .split(/\s+/)
+    .filter((word) => {
+      const normalized = word
+        .replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "")
+        .toLocaleLowerCase("tr");
+      return normalized !== "" && !SEARCH_STOPWORDS.has(normalized);
+    })
+    .join(" ")
+    .trim();
+
+  return cleaned || q;
+}
+
 export const foodService = {
   async searchFoods(query: string): Promise<Food[]> {
     const q = query.trim();
@@ -29,8 +68,10 @@ export const foodService = {
       return [];
     }
 
+    const searchTerm = stripStopwords(stripStandaloneNumbers(q));
+
     try {
-      const result = await index.search(q, {
+      const result = await index.search(searchTerm, {
         limit: 100, // Frontend sıralama mantığının daha iyi sonuç seçebilmesi için limiti artırdık
       });
       return result.hits.filter((f) => f.brand !== "Odd");

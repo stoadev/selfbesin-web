@@ -1,10 +1,13 @@
 import { Sparkles } from "lucide-react";
+import type { AiSearchItem } from "../services/aiSearch.service";
 
 interface AiAnswerBlockProps {
   answer: string;
   isLoading: boolean;
   isLoggedIn: boolean;
   onLoginClick?: () => void;
+  items?: AiSearchItem[];
+  total?: number;
 }
 
 export default function AiAnswerBlock({
@@ -12,8 +15,12 @@ export default function AiAnswerBlock({
   isLoading,
   isLoggedIn,
   onLoginClick,
+  items,
+  total,
 }: AiAnswerBlockProps) {
-  if (isLoggedIn && !isLoading && !answer.trim()) return null;
+  const hasItems = !!items && items.length > 0;
+
+  if (isLoggedIn && !isLoading && !answer.trim() && !hasItems) return null;
 
   return (
     <section className="mb-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-900/60 p-4 md:p-5 shadow-sm">
@@ -44,6 +51,42 @@ export default function AiAnswerBlock({
           <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-800 w-full" />
           <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-800 w-11/12" />
           <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-800 w-2/3" />
+        </div>
+      ) : hasItems ? (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+            Yedikleriniz
+          </h2>
+
+          <ul className="space-y-2">
+            {items!.map((item, i) => (
+              <li
+                key={`${item.name}-${i}`}
+                className="text-sm text-gray-700 dark:text-gray-300"
+              >
+                {item.name} ({item.amount})
+                <span aria-hidden="true" className="mx-1.5 text-gray-400 dark:text-gray-600">
+                  ·
+                </span>
+                <span className="text-gray-900 dark:text-gray-100 tabular-nums">
+                  {item.calories} kcal
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          {total !== undefined && (
+            <>
+              <div className="my-3 border-t border-gray-200 dark:border-gray-800" />
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                Toplam
+                <span aria-hidden="true" className="mx-1.5 text-gray-400 dark:text-gray-600">
+                  ·
+                </span>
+                <span className="tabular-nums">{total} kcal</span>
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">

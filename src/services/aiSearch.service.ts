@@ -1,8 +1,42 @@
 import { supabase } from "../lib/supabase";
 
+export interface AiSearchItem {
+  name: string;
+  amount: string;
+  calories: number;
+}
+
 export interface AiSearchResponse {
   answer: string;
-  foodIds?: string[];
+  items?: AiSearchItem[];
+  total?: number;
+}
+
+function normalizeItems(value: unknown): AiSearchItem[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+
+  const isValid = value.every(
+    (item) =>
+      item !== null &&
+      typeof item === "object" &&
+      typeof (item as AiSearchItem).name === "string" &&
+      typeof (item as AiSearchItem).amount === "string" &&
+      typeof (item as AiSearchItem).calories === "number",
+  );
+
+  if (!isValid) return undefined;
+
+  return (value as AiSearchItem[]).map((item) => ({
+    name: item.name,
+    amount: item.amount,
+    calories: item.calories,
+  }));
+}
+
+function normalizeTotal(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 export const aiSearchService = {
@@ -43,7 +77,8 @@ export const aiSearchService = {
 
       return {
         answer: data.answer || data.output || data.text || "",
-        foodIds: data.foodIds,
+        items: normalizeItems(data.items),
+        total: normalizeTotal(data.total),
       };
     } catch {
       return { answer: "" };
