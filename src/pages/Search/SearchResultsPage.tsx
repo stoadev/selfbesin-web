@@ -42,38 +42,31 @@ export default function SearchResultsPage() {
     setInputValue(query);
 
     const requestId = ++aiRequestIdRef.current;
-    if (!query) {
+
+    if (query) {
+      handleFetchResults(query);
+    }
+
+    if (!query || !shouldTriggerAI(query)) {
       setAiAnswer("");
       setIsAiLoading(false);
       setShowAiBlock(false);
       return;
     }
 
-    handleFetchResults(query).then((fetched) => {
+    setAiAnswer("");
+    setShowAiBlock(true);
+
+    if (!isLoggedIn) {
+      setIsAiLoading(false);
+      return;
+    }
+
+    setIsAiLoading(true);
+    aiSearchService.ask(query).then((res) => {
       if (aiRequestIdRef.current !== requestId) return;
-
-      if (fetched.length === 0 || !shouldTriggerAI(query)) {
-        setAiAnswer("");
-        setIsAiLoading(false);
-        setShowAiBlock(false);
-        return;
-      }
-
-      setShowAiBlock(true);
-
-      if (!isLoggedIn) {
-        setAiAnswer("");
-        setIsAiLoading(false);
-        return;
-      }
-
-      setAiAnswer("");
-      setIsAiLoading(true);
-      aiSearchService.ask(query).then((res) => {
-        if (aiRequestIdRef.current !== requestId) return;
-        setAiAnswer(res.answer);
-        setIsAiLoading(false);
-      });
+      setAiAnswer(res.answer);
+      setIsAiLoading(false);
     });
   }, [query]);
 
