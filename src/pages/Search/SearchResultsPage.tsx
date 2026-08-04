@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { Search, X, Utensils } from "lucide-react";
 import { foodService } from "../../services/food.service";
@@ -10,6 +10,11 @@ import FoodImage from "../../components/common/FoodImage";
 import { useRecentSearches } from "../../hooks/useRecentSearches";
 import type { CombinedItem } from "../Landing/HeroSection";
 import { buildSearchTerm } from "../../utils/searchUtils";
+import { shouldTriggerAI } from "../../utils/aiTriggerUtils";
+import { aiSearchService } from "../../services/aiSearch.service";
+import AiAnswerBlock from "../../components/AiAnswerBlock";
+import AuthModal from "../../components/common/AuthModal";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function SearchResultsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +25,14 @@ export default function SearchResultsPage() {
   const [results, setResults] = useState<Food[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showAiBlock, setShowAiBlock] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const aiRequestIdRef = useRef(0);
+
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const { addSearch, recentSearches, removeSearch, clearHistory } =
     useRecentSearches();
@@ -27,18 +40,52 @@ export default function SearchResultsPage() {
   // URL'deki query değişince inputu güncelle ve ara
   useEffect(() => {
     setInputValue(query);
-    if (query) {
-      handleFetchResults(query);
+
+    const requestId = ++aiRequestIdRef.current;
+    if (!query) {
+      setAiAnswer("");
+      setIsAiLoading(false);
+      setShowAiBlock(false);
+      return;
     }
+
+    handleFetchResults(query).then((fetched) => {
+      if (aiRequestIdRef.current !== requestId) return;
+
+      if (fetched.length === 0 || !shouldTriggerAI(query)) {
+        setAiAnswer("");
+        setIsAiLoading(false);
+        setShowAiBlock(false);
+        return;
+      }
+
+      setShowAiBlock(true);
+
+      if (!isLoggedIn) {
+        setAiAnswer("");
+        setIsAiLoading(false);
+        return;
+      }
+
+      setAiAnswer("");
+      setIsAiLoading(true);
+      aiSearchService.ask(query).then((res) => {
+        if (aiRequestIdRef.current !== requestId) return;
+        setAiAnswer(res.answer);
+        setIsAiLoading(false);
+      });
+    });
   }, [query]);
 
-  const handleFetchResults = async (q: string) => {
+  const handleFetchResults = async (q: string): Promise<Food[]> => {
     setIsLoading(true);
     try {
       const localResults = await foodService.searchFoods(q);
       setResults(localResults);
+      return localResults;
     } catch (err) {
       console.error(err);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -156,6 +203,15 @@ export default function SearchResultsPage() {
           {query ? `"${query}" için besin arama sonuçları` : "Besin Arama"}
         </h1>
 
+        {showAiBlock && (
+          <AiAnswerBlock
+            answer={aiAnswer}
+            isLoading={isAiLoading}
+            isLoggedIn={isLoggedIn}
+            onLoginClick={() => setIsAuthModalOpen(true)}
+          />
+        )}
+
         {/* Sonuç Sayısı ve Info */}
         <div className="mb-6">
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -245,6 +301,11 @@ export default function SearchResultsPage() {
         onRemoveRecent={removeSearch}
         onAddSearch={addSearch}
         buildSearchTerm={buildSearchTerm}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
     </div>
   );
