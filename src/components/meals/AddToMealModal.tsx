@@ -25,7 +25,7 @@ export default function AddToMealModal({
   grams,
 }: AddToMealModalProps) {
   const { user } = useAuth();
-  const { refreshMeals } = useMeals();
+  const { refreshMeals, selectedDate } = useMeals();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [selectedMealId, setSelectedMealId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +37,7 @@ export default function AddToMealModal({
         .from("selfbesin_meals")
         .select("*")
         .eq("user_id", user.id)
+        .eq("logged_date", selectedDate)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -47,7 +48,7 @@ export default function AddToMealModal({
     } catch (error) {
       console.error("Error fetching meals:", error);
     }
-  }, [user]);
+  }, [user, selectedDate]);
 
   useEffect(() => {
     if (isOpen && user) {

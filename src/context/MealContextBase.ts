@@ -4,6 +4,8 @@ import type { MealWithFoods } from "../types";
 export type MealContextType = {
   meals: MealWithFoods[];
   loading: boolean;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
   refreshMeals: (showLoading?: boolean) => Promise<MealWithFoods[]>;
   setMeals: (meals: MealWithFoods[]) => void;
 };
