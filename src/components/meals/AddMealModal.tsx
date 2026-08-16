@@ -11,7 +11,6 @@ import Button from "../common/Button";
 import ConfirmModal from "../common/ConfirmModal";
 import Loading from "../common/Loading";
 import FoodAmountSelectionModal from "./FoodAmountSelectionModal";
-import { getMealSlot } from "../../utils/mealSlot";
 
 type SelectedFood = {
   food: Food;
@@ -35,7 +34,8 @@ function AddMealModalContent({
   mealToEdit?: MealWithFoods | null;
 }) {
   const { user } = useAuth();
-  const { refreshMeals, selectedDate } = useMeals();
+  const { refreshMeals } = useMeals();
+  const [mealName, setMealName] = useState(mealToEdit?.name || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Food[]>([]);
   const [selectedFoods, setSelectedFoods] = useState<SelectedFood[]>(
@@ -113,13 +113,21 @@ function AddMealModalContent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || !mealName.trim()) return;
 
     setIsSubmitting(true);
     try {
       let mealId = mealToEdit?.id;
 
       if (mealToEdit) {
+        // 1. Update Meal Name
+        const { error: updateError } = await supabase
+          .from("selfbesin_meals")
+          .update({ name: mealName.trim() })
+          .eq("id", mealToEdit.id);
+
+        if (updateError) throw updateError;
+
         // 2. Delete Existing Foods
         const { error: deleteError } = await supabase
           .from("selfbesin_meal_foods")
@@ -131,13 +139,7 @@ function AddMealModalContent({
         // 1. Create New Meal
         const { data: meal, error: mealError } = await supabase
           .from("selfbesin_meals")
-          .insert([
-            {
-              user_id: user.id,
-              name: getMealSlot(new Date()).name,
-              logged_date: selectedDate,
-            },
-          ])
+          .insert([{ user_id: user.id, name: mealName.trim() }])
           .select()
           .single();
 
@@ -216,6 +218,21 @@ function AddMealModalContent({
       </div>
 
       <div className="flex-1 overflow-y-auto p-[3dvh] flex flex-col gap-[3dvh]">
+        {/* Meal Name */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+            Öğün İsmi
+          </label>
+          <input
+            type="text"
+            required
+            placeholder="Örn: Sabah Kahvaltısı"
+            className="w-full h-[6dvh] min-h-[44px] px-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+            value={mealName}
+            onChange={(e) => setMealName(e.target.value)}
+          />
+        </div>
+
         {/* Food Search */}
         <div className="relative">
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
@@ -438,7 +455,7 @@ function AddMealModalContent({
             type="submit"
             variant="primary"
             className="flex-[2] h-[6dvh] min-h-[44px] flex items-center justify-center gap-2"
-            disabled={isSubmitting}
+            disabled={!mealName.trim() || isSubmitting}
             loading={isSubmitting}
           >
             <Save className="w-4 h-4" />

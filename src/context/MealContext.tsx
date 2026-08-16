@@ -4,27 +4,16 @@ import { useAuth } from "../hooks/useAuth";
 import type { MealWithFoods } from "../types";
 import { MealContext } from "./MealContextBase";
 
-function getTodayDate() {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().split("T")[0];
-}
-
 export function MealProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [meals, setMeals] = useState<MealWithFoods[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(getTodayDate);
-  const cacheKey = useRef(
-    user ? `meals_cache_${user.id}_${getTodayDate()}` : null,
-  );
+  const cacheKey = useRef(user ? `meals_cache_${user.id}` : null);
 
   const refreshMeals = useCallback(
     async (showLoading = false) => {
       if (!user) return [];
       if (showLoading) setLoading(true);
-
-      cacheKey.current = `meals_cache_${user.id}_${selectedDate}`;
 
       try {
         const { data, error } = await supabase
@@ -39,7 +28,6 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
         `,
           )
           .eq("user_id", user.id)
-          .eq("logged_date", selectedDate)
           .order("created_at", { ascending: true });
 
         if (error) throw error;
@@ -60,7 +48,7 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     },
-    [user, selectedDate],
+    [user],
   );
 
   // Initialize from cache
@@ -71,7 +59,7 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    cacheKey.current = `meals_cache_${user.id}_${selectedDate}`;
+    cacheKey.current = `meals_cache_${user.id}`;
     const cachedData = localStorage.getItem(cacheKey.current);
     if (cachedData) {
       try {
@@ -79,25 +67,14 @@ export function MealProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error("Error parsing meals cache:", e);
       }
-    } else {
-      setMeals([]);
     }
 
     // Initial fetch
     refreshMeals(meals.length === 0);
-  }, [user, selectedDate, refreshMeals]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, refreshMeals]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <MealContext.Provider
-      value={{
-        meals,
-        loading,
-        selectedDate,
-        setSelectedDate,
-        refreshMeals,
-        setMeals,
-      }}
-    >
+    <MealContext.Provider value={{ meals, loading, refreshMeals, setMeals }}>
       {children}
     </MealContext.Provider>
   );

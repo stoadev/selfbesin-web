@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Utensils,
@@ -10,8 +10,6 @@ import {
   Edit2,
   Copy,
   Trash,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import Loading from "../../components/common/Loading";
 import SwipeableItem from "../../components/common/SwipeableItem";
@@ -24,98 +22,11 @@ import MealViewModal from "../../components/meals/MealViewModal";
 import AddFoodSearchModal from "../../components/meals/AddFoodSearchModal";
 import FoodAmountSelectionModal from "../../components/meals/FoodAmountSelectionModal";
 import ConfirmModal from "../../components/common/ConfirmModal";
-import type { MealWithFoods, Food, MealFood, FoodUnit } from "../../types";
-import { getBasisLabel } from "../../types";
-
-function toDateKey(date: Date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().split("T")[0];
-}
-
-function shiftDateKey(dateKey: string, days: number) {
-  const date = new Date(`${dateKey}T00:00:00`);
-  date.setDate(date.getDate() + days);
-  return toDateKey(date);
-}
-
-function formatSelectedDate(dateKey: string) {
-  const todayKey = toDateKey(new Date());
-  if (dateKey === todayKey) return "Bugün";
-  if (dateKey === shiftDateKey(todayKey, -1)) return "Dün";
-
-  return new Date(`${dateKey}T00:00:00`).toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-const SIZE_ONLY_UNIT_NAMES = new Set([
-  "orta",
-  "küçük",
-  "büyük",
-  "orta boy",
-  "küçük boy",
-  "büyük boy",
-  "boy",
-]);
-
-function normalizeUnitName(name: string) {
-  const cleaned = name
-    .replace(/^[\s\d.,/]+/, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (!cleaned) return "adet";
-
-  return SIZE_ONLY_UNIT_NAMES.has(cleaned.toLocaleLowerCase("tr"))
-    ? "adet"
-    : cleaned;
-}
-
-function formatMealFoodAmount(mf: MealFood) {
-  const food = mf.food;
-  if (!food) return { serving: null, grams: `${mf.grams}g` };
-
-  let units: FoodUnit[] = [];
-  try {
-    units = Array.isArray(food.serving_units)
-      ? food.serving_units
-      : typeof food.serving_units === "string"
-        ? JSON.parse(food.serving_units)
-        : [];
-  } catch {
-    units = [];
-  }
-
-  const matchingUnit = units.find(
-    (u) => u.grams > 0 && mf.grams % u.grams === 0,
-  );
-
-  const grams = `${mf.grams}${getBasisLabel(food).unit}`;
-
-  if (matchingUnit) {
-    const count = (mf.grams / matchingUnit.grams).toFixed(1).replace(".0", "");
-    return {
-      serving: `${count} ${normalizeUnitName(matchingUnit.name)}`,
-      grams,
-    };
-  }
-
-  return { serving: null, grams };
-}
-
-function formatMealTime(value: string) {
-  return new Date(value).toLocaleTimeString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import type { MealWithFoods, Food, MealFood } from "../../types";
 
 export default function MealsPage() {
   const { user } = useAuth();
-  const { meals, loading, refreshMeals, selectedDate, setSelectedDate } =
-    useMeals();
+  const { meals, loading, refreshMeals } = useMeals();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isMutating, setIsMutating] = useState(false);
@@ -142,30 +53,6 @@ export default function MealsPage() {
     onConfirm: () => {},
     isLoading: false,
   });
-
-  const dateInputRef = useRef<HTMLInputElement>(null);
-
-  const openDatePicker = () => {
-    const input = dateInputRef.current;
-    if (!input) return;
-    if (typeof input.showPicker === "function") {
-      try {
-        input.showPicker();
-        return;
-      } catch {
-        input.click();
-        return;
-      }
-    }
-    input.click();
-  };
-
-  const sortedMeals = useMemo(() => {
-    return [...meals].sort(
-      (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
-  }, [meals]);
 
   const dailyTotals = useMemo(() => {
     return meals.reduce(
@@ -416,7 +303,7 @@ export default function MealsPage() {
         <header className="mb-[2dvh] shrink-0">
           <div className="flex items-center justify-between mb-[1dvh]">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-              Beslenme Kaydı
+              Öğün Seç
             </h1>
             <Button
               variant="cta"
@@ -424,57 +311,13 @@ export default function MealsPage() {
               onClick={() => setIsModalOpen(true)}
             >
               <Plus className="w-4 h-4 mr-1" />
-              <span className="text-xs font-bold">Kayıt Ekle</span>
+              <span className="text-xs font-bold">Öğün Ekle</span>
             </Button>
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-[10px] sm:text-xs">
-            Ne zaman ne yediğinizi buradan takip edin.
+            Günlük beslenme takibini buradan yönetebilirsin.
           </p>
         </header>
-
-        <div className="mb-[2dvh] shrink-0 flex items-center justify-between gap-2 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-2 py-1.5 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setSelectedDate(shiftDateKey(selectedDate, -1))}
-            aria-label="Önceki gün"
-            className="p-2 rounded-xl text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
-          <div className="relative flex items-center min-w-0">
-            <button
-              type="button"
-              onClick={openDatePicker}
-              className="flex items-center gap-2 min-w-0 px-2 py-1 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-            >
-              <Calendar className="w-3.5 h-3.5 text-emerald-500/70 shrink-0" />
-              <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white truncate">
-                {formatSelectedDate(selectedDate)}
-              </span>
-            </button>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={selectedDate}
-              max={toDateKey(new Date())}
-              onChange={(e) => {
-                if (e.target.value) setSelectedDate(e.target.value);
-              }}
-              className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setSelectedDate(shiftDateKey(selectedDate, 1))}
-            disabled={selectedDate >= toDateKey(new Date())}
-            aria-label="Sonraki gün"
-            className="p-2 rounded-xl text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-gray-400 disabled:hover:bg-transparent"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
 
         {/* Günlük Toplam Özet (Daha Kompakt) */}
         <div className="mb-[3dvh] grid grid-cols-4 gap-[2.5dvw] sm:gap-4 shrink-0 px-1">
@@ -559,7 +402,7 @@ export default function MealsPage() {
 
         {loading && meals.length === 0 ? (
           <div className="flex-1 min-h-0 relative mb-[1dvh]">
-            <div className="h-full overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
+            <div className="h-[50dvh] sm:h-[60dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
               <div className="space-y-[1dvh]">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="relative overflow-hidden rounded-3xl">
@@ -597,9 +440,9 @@ export default function MealsPage() {
           </div>
         ) : (
           <div className="flex-1 min-h-0 relative mb-[1dvh]">
-            <div className="h-full overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
+            <div className="h-[50dvh] sm:h-[60dvh] inset-0 overflow-y-auto scrollbar-hide border-2 border-gray-50 dark:border-gray-800/50 rounded-[2rem] p-[1dvh] bg-gray-100 dark:bg-gray-900/10 shadow-inner">
               <div className="space-y-[1dvh]">
-                {sortedMeals.map((meal) => (
+                {meals.map((meal) => (
                   <SwipeableItem
                     key={meal.id}
                     actions={[
@@ -630,24 +473,25 @@ export default function MealsPage() {
                       },
                     ]}
                   >
-                    <div
-                      className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md hover:bg-gray-50/80 dark:hover:bg-gray-800/40 transition-all duration-300 group/card relative cursor-pointer"
-                      onClick={() => handleMealClick(meal)}
-                    >
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300 group/card relative">
                       {/* Accent Line */}
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500/80 to-emerald-600/80 rounded-full my-4" />
 
-                      <div className="p-4 sm:p-5 flex items-center justify-between gap-4 pl-6">
+                      <div
+                        className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-gray-50/80 transition-colors dark:hover:bg-gray-800/40 pl-6"
+                        onClick={() => handleMealClick(meal)}
+                      >
                         <div className="flex items-center gap-[1dvh] sm:gap-[2dvh] min-w-0">
                           <div className="min-w-0">
-                            <h3 className="flex items-baseline gap-2 leading-tight truncate mb-1">
-                              <span className="text-lg sm:text-xl font-black text-gray-900 dark:text-white tabular-nums">
-                                {formatMealTime(meal.created_at)}
-                              </span>
-                              <span className="text-[11px] sm:text-xs font-medium text-gray-400 dark:text-gray-500 truncate">
-                                {meal.name}
-                              </span>
+                            <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white leading-tight truncate mb-1">
+                              {meal.name}
                             </h3>
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-tighter">
+                              <Calendar className="w-3 h-3 text-emerald-500/70" />
+                              {new Date(meal.created_at).toLocaleDateString(
+                                "tr-TR",
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -711,39 +555,6 @@ export default function MealsPage() {
                             ))}
                           </div>
                         </div>
-                      </div>
-
-                      <div className="px-4 sm:px-5 pl-6 pb-4 sm:pb-5 -mt-1">
-                        {(meal.meal_foods || []).length > 0 ? (
-                          <ul className="space-y-1">
-                            {(meal.meal_foods || []).map((mf) => {
-                              const amount = formatMealFoodAmount(mf);
-                              return (
-                                <li
-                                  key={mf.id}
-                                  className="flex items-baseline justify-between gap-3 text-[11px] sm:text-xs"
-                                >
-                                  <span className="text-gray-600 dark:text-gray-400 truncate">
-                                    {amount.serving ? `${amount.serving} ` : ""}
-                                    {mf.food?.display_name?.trim() ||
-                                      mf.food?.name ||
-                                      "Besin"}{" "}
-                                    <span className="text-gray-400 dark:text-gray-600">
-                                      {amount.grams}
-                                    </span>
-                                  </span>
-                                  <span className="shrink-0 font-bold text-gray-500 dark:text-gray-400 tabular-nums">
-                                    {Math.round(mf.calories || 0)} kcal
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <p className="text-[11px] sm:text-xs text-gray-400 dark:text-gray-600">
-                            Besin eklenmemiş
-                          </p>
-                        )}
                       </div>
                     </div>
                   </SwipeableItem>
